@@ -50,12 +50,12 @@
 
   // Material-Inventar
   let materials = $state<Record<string, number>>({
-    scrap: 15, copper: 15, aluminum: 10, transistors: 5,
-    chips: 5, resistors: 8, diodes: 10, screws: 20,
-    springs: 10, leather: 0, plastic: 10, glass: 15
+    scrap: 0, copper: 0, aluminum: 0, transistors: 0,
+    chips: 0, resistors: 0, diodes: 0, screws: 0,
+    springs: 0, leather: 0, plastic: 0, glass: 0
   });
 
-  let credits = $state(25);
+  let credits = $state(0);
   const BATTERY_PRICE = 50;
   const BATTERY_ENERGY = 50;
   let batteries = $state(0);
