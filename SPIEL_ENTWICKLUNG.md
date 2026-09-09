@@ -282,6 +282,12 @@ geöffnet werden. Das Dev-Panel enthält Testfunktionen für:
 - zusätzliche XP (`+100 XP` und `+1.000 XP`)
 - sofortiges Freischalten aller Roboter- und Basis-Upgrades einschließlich aller Stufen
 - Rohstoffe, Geräte und Fahrzeuge zum Testen hinzufügen
+- das gesamte Lager leeren
+- alle Statistikzähler zurücksetzen
+
+Die beiden Reset-Aktionen verlangen vor dem Löschen eine Bestätigung. Ein
+Lager-Reset entfernt Rohstoffe, Geräte, Fahrzeuge und Batterien, lässt aber XP,
+Upgrades und Aufträge unangetastet.
 
 Die Admin-Funktionen sind für Entwicklung und Tests gedacht und nicht als reguläre
 Spielmechanik vorgesehen.

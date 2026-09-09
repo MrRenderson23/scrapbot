@@ -422,6 +422,26 @@
     energy = maxEnergy;
   }
 
+  function resetStorage() {
+    if (!confirm('Wirklich das gesamte Lager leeren?')) return;
+
+    for (const key of Object.keys(materials)) materials[key] = 0;
+    for (const key of Object.keys(deviceInventory)) deviceInventory[key] = 0;
+    for (const key of Object.keys(vehicleInventory)) vehicleInventory[key] = 0;
+    batteries = 0;
+  }
+
+  function resetStatistics() {
+    if (!confirm('Wirklich alle Statistiken auf null setzen?')) return;
+
+    for (const key of Object.keys(statistics) as (keyof typeof statistics)[]) {
+      statistics[key] = typeof statistics[key] === 'number' ? 0 : statistics[key];
+    }
+    for (const key of Object.keys(resourcesCollectedByType)) {
+      resourcesCollectedByType[key] = 0;
+    }
+  }
+
   function cheatAddExperience(amount: number) {
     experiencePoints += Math.max(0, amount);
   }
@@ -1379,6 +1399,14 @@
       </div>
 
       <div class="cheat-section">
+        <h3>♻️ Zurücksetzen</h3>
+        <div class="cheat-actions">
+          <button class="cheat-btn danger" onclick={resetStorage}>🗑️ Lager zurücksetzen</button>
+          <button class="cheat-btn danger" onclick={resetStatistics}>📊 Statistiken zurücksetzen</button>
+        </div>
+      </div>
+
+      <div class="cheat-section">
         <h3>📦 Rohstoffe einzeln hinzufügen (+50)</h3>
         <div class="cheat-grid">
           {#each Object.entries(MATERIALS) as [key, mat]}
@@ -2187,6 +2215,7 @@
     text-align: left;
   }
   .cheat-btn.highlight { background: #0284c7; color: white; border: none; font-weight: bold; }
+  .cheat-btn.danger { background: #991b1b; color: white; border: 1px solid #ef4444; font-weight: bold; }
 
   /* FOOTER */
   .game-footer {
