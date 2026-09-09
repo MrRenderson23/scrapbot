@@ -442,6 +442,20 @@
     }
   }
 
+  function resetRobotUpgrades() {
+    if (!confirm('Wirklich alle Roboter-Upgrades zurücksetzen?')) return;
+
+    purchasedUpgrades = [];
+    maxEnergy = 100;
+    energy = Math.min(energy, maxEnergy);
+  }
+
+  function resetBaseUpgrades() {
+    if (!confirm('Wirklich alle Basis-Upgrades zurücksetzen?')) return;
+
+    purchasedBaseUpgrades = [];
+  }
+
   function cheatAddExperience(amount: number) {
     experiencePoints += Math.max(0, amount);
   }
@@ -1428,6 +1442,8 @@
         <div class="cheat-actions">
           <button class="cheat-btn danger" onclick={resetStorage}>🗑️ Lager zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetStatistics}>📊 Statistiken zurücksetzen</button>
+          <button class="cheat-btn danger" onclick={resetRobotUpgrades}>🤖 Roboter-Upgrades zurücksetzen</button>
+          <button class="cheat-btn danger" onclick={resetBaseUpgrades}>🏗️ Basis-Upgrades zurücksetzen</button>
         </div>
       </div>
 
