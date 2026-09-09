@@ -51,10 +51,15 @@ Ein Spielstand vom PC ist deshalb nicht automatisch auf dem Handy verfügbar.
 Beim Start eines neuen Spielstands beginnen Rohstoffe und Credits bei `0`.
 
 Das Menü **📊 Statistik** wird in `src/lib/components/GameHeader.svelte` als
-Tab eingetragen und in `src/routes/+page.svelte` dargestellt. Die Zähler werden
-bei erfolgreichen Such-, Zerlege-, Markt- und Auftragsaktionen aktualisiert.
+Tab eingetragen und in `src/routes/+page.svelte` dargestellt. Die Übersicht
+trennt Aktionen des Spielers von den Leistungen der Sammeldrohne und des
+automatischen Zerlegekrans. Zusätzlich werden Gesamtwerte für erfolgreiche
+Such-, Zerlege-, Markt- und Auftragsaktionen angezeigt.
+
 Neue dauerhafte Spielstatistiken sollten im `statistics`-Objekt angelegt und
-anschließend in der Lade-, Speicher- und Anzeige-Logik ergänzt werden.
+anschließend in der Lade-, Speicher- und Anzeige-Logik ergänzt werden. Bei
+Ressourcenaktionen muss die Quelle (`player`, `drone` oder `auto`) mitgegeben
+werden, damit die Aufteilung korrekt bleibt.
 
 ## Veröffentlichung auf GitHub Pages
 

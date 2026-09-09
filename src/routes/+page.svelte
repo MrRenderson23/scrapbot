@@ -109,10 +109,20 @@
   let saveReady = $state(false);
   let statistics = $state({
     resourcesCollected: 0,
+    playerResourcesCollected: 0,
+    droneResourcesCollected: 0,
+    autoResourcesCollected: 0,
     electronicsFound: 0,
+    playerElectronicsFound: 0,
+    droneElectronicsFound: 0,
     vehiclesFound: 0,
+    playerVehiclesFound: 0,
     electronicsDismantled: 0,
+    playerElectronicsDismantled: 0,
+    autoElectronicsDismantled: 0,
     vehiclesDismantled: 0,
+    playerVehiclesDismantled: 0,
+    autoVehiclesDismantled: 0,
     questsCompleted: 0,
     creditsEarned: 0,
     creditsSpent: 0
@@ -143,9 +153,11 @@
       : fallback;
   }
 
-  function addResources(key: string, amount: number) {
+  function addResources(key: string, amount: number, source: 'player' | 'drone' | 'auto' = 'player') {
     materials[key] = (materials[key] || 0) + amount;
-    statistics.resourcesCollected += Math.max(0, amount);
+    const actualAmount = Math.max(0, amount);
+    statistics.resourcesCollected += actualAmount;
+    statistics[`${source}ResourcesCollected`] += actualAmount;
   }
 
   function restoreStatistics(value: unknown) {
@@ -318,8 +330,10 @@
       inventory[selected.item.id] -= 1;
 
         for (const yieldItem of selected.item.yields) {
-          addResources(yieldItem.id, yieldItem.amount);
+          addResources(yieldItem.id, yieldItem.amount, 'auto');
       }
+        if (selected.isVehicle) statistics.autoVehiclesDismantled += 1;
+        else statistics.autoElectronicsDismantled += 1;
     }, dismantleIntervalMs);
 
     return () => clearInterval(autoInterval);
@@ -368,9 +382,10 @@
       if (found) {
         addToInventory(deviceInventory, found.id);
         statistics.electronicsFound += 1;
+        statistics.droneElectronicsFound += 1;
         lastDroneMessage = `🛸 Drohne mitgebracht: ${found.icon} ${found.name}`;
       } else {
-        addResources('scrap', 2);
+        addResources('scrap', 2, 'drone');
         lastDroneMessage = '🛸 Drohne mitgebracht: 2x Altmetall';
       }
     }, droneIntervalMs);
@@ -543,11 +558,12 @@
       if (found) {
         addToInventory(deviceInventory, found.id);
         statistics.electronicsFound += 1;
+        statistics.playerElectronicsFound += 1;
         awardExperience(XP_REWARDS.search + experienceForFoundItem(found));
         lastFoundMessage = `Gefunden: ${found.icon} ${found.name}!`;
       } else {
         awardExperience(XP_REWARDS.search);
-        materials.scrap += 2;
+        addResources('scrap', 2);
         lastFoundMessage = 'Kein Gerät gefunden, aber 2x Altmetall gesammelt.';
       }
       return;
@@ -556,6 +572,7 @@
     if (found) {
       addToInventory(vehicleInventory, found.id);
       statistics.vehiclesFound += 1;
+      statistics.playerVehiclesFound += 1;
       awardExperience(XP_REWARDS.search + experienceForFoundItem(found));
       lastVehicleMessage = `Gefunden: ${found.icon} ${found.name}!`;
     } else {
@@ -703,8 +720,13 @@
 
       if (dismantleProgress >= 100) {
         inv[item.id] -= 1;
-        if (isVehicle) statistics.vehiclesDismantled += 1;
-        else statistics.electronicsDismantled += 1;
+        if (isVehicle) {
+          statistics.vehiclesDismantled += 1;
+          statistics.playerVehiclesDismantled += 1;
+        } else {
+          statistics.electronicsDismantled += 1;
+          statistics.playerElectronicsDismantled += 1;
+        }
         for (const yieldItem of item.yields) {
           addResources(yieldItem.id, yieldItem.amount);
         }
@@ -1291,12 +1313,31 @@
       <h2>📊 ScrapBot-Statistik</h2>
       <p class="tab-sub">Deine bisherige Leistung im Hauptquartier auf einen Blick.</p>
 
+      <h3 class="statistics-heading">Vom Spieler</h3>
       <div class="statistics-grid">
-        <div class="stat-card"><span class="stat-icon">📦</span><strong>{statistics.resourcesCollected}</strong><span>Ressourcen gesammelt</span></div>
-        <div class="stat-card"><span class="stat-icon">🚗</span><strong>{statistics.vehiclesFound}</strong><span>Autos gefunden</span></div>
-        <div class="stat-card"><span class="stat-icon">🔧</span><strong>{statistics.vehiclesDismantled}</strong><span>Autos zerlegt</span></div>
-        <div class="stat-card"><span class="stat-icon">📻</span><strong>{statistics.electronicsFound}</strong><span>Geräte gefunden</span></div>
-        <div class="stat-card"><span class="stat-icon">⚙️</span><strong>{statistics.electronicsDismantled}</strong><span>Geräte zerlegt</span></div>
+        <div class="stat-card"><span class="stat-icon">📦</span><strong>{statistics.playerResourcesCollected}</strong><span>Ressourcen gesammelt</span></div>
+        <div class="stat-card"><span class="stat-icon">🚗</span><strong>{statistics.playerVehiclesFound}</strong><span>Autos gefunden</span></div>
+        <div class="stat-card"><span class="stat-icon">🔧</span><strong>{statistics.playerVehiclesDismantled}</strong><span>Autos zerlegt</span></div>
+        <div class="stat-card"><span class="stat-icon">📻</span><strong>{statistics.playerElectronicsFound}</strong><span>Geräte gefunden</span></div>
+        <div class="stat-card"><span class="stat-icon">⚙️</span><strong>{statistics.playerElectronicsDismantled}</strong><span>Geräte zerlegt</span></div>
+      </div>
+
+      <h3 class="statistics-heading">Automatische Systeme</h3>
+      <div class="statistics-grid">
+        <div class="stat-card"><span class="stat-icon">🛸</span><strong>{statistics.droneResourcesCollected}</strong><span>Drohnen-Ressourcen</span></div>
+        <div class="stat-card"><span class="stat-icon">📡</span><strong>{statistics.droneElectronicsFound}</strong><span>Drohnen-Funde</span></div>
+        <div class="stat-card"><span class="stat-icon">🏗️</span><strong>{statistics.autoResourcesCollected}</strong><span>Kran-Ressourcen</span></div>
+        <div class="stat-card"><span class="stat-icon">⚙️</span><strong>{statistics.autoElectronicsDismantled}</strong><span>Geräte automatisch zerlegt</span></div>
+        <div class="stat-card"><span class="stat-icon">🚗</span><strong>{statistics.autoVehiclesDismantled}</strong><span>Autos automatisch zerlegt</span></div>
+      </div>
+
+      <h3 class="statistics-heading">Gesamt und Fortschritt</h3>
+      <div class="statistics-grid">
+        <div class="stat-card"><span class="stat-icon">📦</span><strong>{statistics.resourcesCollected}</strong><span>Ressourcen insgesamt</span></div>
+        <div class="stat-card"><span class="stat-icon">🚗</span><strong>{statistics.vehiclesFound}</strong><span>Autos insgesamt gefunden</span></div>
+        <div class="stat-card"><span class="stat-icon">🔧</span><strong>{statistics.vehiclesDismantled}</strong><span>Autos insgesamt zerlegt</span></div>
+        <div class="stat-card"><span class="stat-icon">📻</span><strong>{statistics.electronicsFound}</strong><span>Geräte insgesamt gefunden</span></div>
+        <div class="stat-card"><span class="stat-icon">⚙️</span><strong>{statistics.electronicsDismantled}</strong><span>Geräte insgesamt zerlegt</span></div>
         <div class="stat-card"><span class="stat-icon">📜</span><strong>{statistics.questsCompleted}</strong><span>Aufträge erledigt</span></div>
         <div class="stat-card"><span class="stat-icon">💰</span><strong>{statistics.creditsEarned}</strong><span>Credits verdient</span></div>
         <div class="stat-card"><span class="stat-icon">🛒</span><strong>{statistics.creditsSpent}</strong><span>Credits ausgegeben</span></div>
