@@ -127,6 +127,9 @@
     creditsEarned: 0,
     creditsSpent: 0
   });
+  let resourcesCollectedByType = $state<Record<string, number>>(
+    Object.fromEntries(Object.keys(MATERIALS).map(key => [key, 0]))
+  );
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -158,6 +161,7 @@
     const actualAmount = Math.max(0, amount);
     statistics.resourcesCollected += actualAmount;
     statistics[`${source}ResourcesCollected`] += actualAmount;
+    resourcesCollectedByType[key] = (resourcesCollectedByType[key] || 0) + actualAmount;
   }
 
   function restoreStatistics(value: unknown) {
@@ -186,6 +190,7 @@
         purchasedBaseUpgrades = restoreStringList(savedGame.purchasedBaseUpgrades, purchasedBaseUpgrades);
         completedQuestIds = restoreStringList(savedGame.completedQuestIds, completedQuestIds);
         restoreStatistics(savedGame.statistics);
+        resourcesCollectedByType = restoreNumberMap(savedGame.resourcesCollectedByType, resourcesCollectedByType);
       }
     } catch {
       localStorage.removeItem(SAVE_KEY);
@@ -210,7 +215,8 @@
       purchasedUpgrades,
       purchasedBaseUpgrades,
       completedQuestIds,
-      statistics
+      statistics,
+      resourcesCollectedByType
     }));
   });
 
@@ -629,7 +635,7 @@
 
     credits -= cost;
     statistics.creditsSpent += cost;
-    addResources(key, count);
+    materials[key] = (materials[key] || 0) + count;
   }
 
   function buyDevice(item: typeof ELECTRONICS[0], amount: number = 1) {
@@ -1343,12 +1349,12 @@
         <div class="stat-card"><span class="stat-icon">🛒</span><strong>{statistics.creditsSpent}</strong><span>Credits ausgegeben</span></div>
       </div>
 
-      <h3 class="statistics-heading">Aktueller Rohstoffbestand</h3>
+      <h3 class="statistics-heading">Insgesamt gesammelte Rohstoffe</h3>
       <div class="statistics-materials">
         {#each Object.entries(MATERIALS) as [key, material]}
           <div class="statistics-material">
             <span>{material.icon} {material.name}</span>
-            <strong>{materials[key] || 0}</strong>
+            <strong>{resourcesCollectedByType[key] || 0}</strong>
           </div>
         {/each}
       </div>

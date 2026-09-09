@@ -56,6 +56,10 @@ trennt Aktionen des Spielers von den Leistungen der Sammeldrohne und des
 automatischen Zerlegekrans. Zusätzlich werden Gesamtwerte für erfolgreiche
 Such-, Zerlege-, Markt- und Auftragsaktionen angezeigt.
 
+Die Rohstoffliste in der Statistik zeigt die insgesamt erhaltene Menge je
+Rohstoff, nicht den aktuellen Lagerbestand. Einkäufe im Markt werden dabei
+nicht als gesammelt gezählt; der aktuelle Bestand bleibt im Menü **Lager**.
+
 Neue dauerhafte Spielstatistiken sollten im `statistics`-Objekt angelegt und
 anschließend in der Lade-, Speicher- und Anzeige-Logik ergänzt werden. Bei
 Ressourcenaktionen muss die Quelle (`player`, `drone` oder `auto`) mitgegeben
