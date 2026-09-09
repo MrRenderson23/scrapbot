@@ -20,6 +20,8 @@ src/
       RobotSidebar.svelte   rechte Roboter-Seitenleiste
   routes/
     +page.svelte            Spielzustand, Abläufe und übrige Ansichten
+.github/
+  workflows/deploy.yml       automatischer GitHub-Pages-Deploy
 ```
 
 ## Grundregeln beim Bearbeiten
@@ -30,6 +32,54 @@ src/
 4. Zahlen ohne Anführungszeichen schreiben: `findChance: 0.15`.
 5. Texte und IDs stehen in einfachen oder doppelten Anführungszeichen.
 6. Nach Änderungen `npm run check` ausführen.
+
+## Spielstand und Statistik
+
+Der Spielstand wird automatisch im Browser gespeichert. Die Speicherlogik liegt in
+`src/routes/+page.svelte`; der Schlüssel lautet `scrapbot-save-v1`.
+
+Gespeichert werden unter anderem:
+
+- Rohstoffe, Credits, Energie und Batterien
+- Geräte- und Fahrzeuginventar
+- XP, gekaufte Upgrades und erledigte Aufträge
+- der zuletzt geöffnete Tab
+- die Werte aus dem Menü **Statistik**
+
+Der Spielstand ist an den jeweiligen Browser und das jeweilige Gerät gebunden.
+Ein Spielstand vom PC ist deshalb nicht automatisch auf dem Handy verfügbar.
+Beim Start eines neuen Spielstands beginnen Rohstoffe und Credits bei `0`.
+
+Das Menü **📊 Statistik** wird in `src/lib/components/GameHeader.svelte` als
+Tab eingetragen und in `src/routes/+page.svelte` dargestellt. Die Zähler werden
+bei erfolgreichen Such-, Zerlege-, Markt- und Auftragsaktionen aktualisiert.
+Neue dauerhafte Spielstatistiken sollten im `statistics`-Objekt angelegt und
+anschließend in der Lade-, Speicher- und Anzeige-Logik ergänzt werden.
+
+## Veröffentlichung auf GitHub Pages
+
+Das Projekt wird über `.github/workflows/deploy.yml` automatisch veröffentlicht.
+Bei jedem Push auf den Branch `main` passiert Folgendes:
+
+1. GitHub installiert die Abhängigkeiten.
+2. SvelteKit erstellt einen statischen Build mit `BASE_PATH=/scrapbot`.
+3. GitHub Pages veröffentlicht den Inhalt aus `build/`.
+
+Für das Repository muss unter **Settings > Pages** bei **Build and deployment**
+als Quelle **GitHub Actions** ausgewählt sein. Danach ist das Spiel unter dieser
+Adresse erreichbar:
+
+```text
+https://mrrenderson23.github.io/scrapbot/
+```
+
+Die statische SvelteKit-Konfiguration liegt in `vite.config.js` und verwendet
+`@sveltejs/adapter-static`. Der lokale Produktionsbuild kann mit folgendem
+Befehl geprüft werden:
+
+```text
+$env:BASE_PATH='/scrapbot'; npm run build
+```
 
 ## Ein neues Elektrogerät hinzufügen
 
