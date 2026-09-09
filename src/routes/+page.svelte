@@ -74,6 +74,7 @@
     if (credits < cost) return;
 
     credits -= cost;
+    statistics.creditsSpent += cost;
     batteries += count;
   }
 
@@ -106,6 +107,16 @@
   let completedQuestIds = $state<string[]>([]);
   let questMessage = $state('');
   let saveReady = $state(false);
+  let statistics = $state({
+    resourcesCollected: 0,
+    electronicsFound: 0,
+    vehiclesFound: 0,
+    electronicsDismantled: 0,
+    vehiclesDismantled: 0,
+    questsCompleted: 0,
+    creditsEarned: 0,
+    creditsSpent: 0
+  });
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -132,6 +143,19 @@
       : fallback;
   }
 
+  function addResources(key: string, amount: number) {
+    materials[key] = (materials[key] || 0) + amount;
+    statistics.resourcesCollected += Math.max(0, amount);
+  }
+
+  function restoreStatistics(value: unknown) {
+    if (!isRecord(value)) return;
+
+    for (const key of Object.keys(statistics) as (keyof typeof statistics)[]) {
+      statistics[key] = restoreNumber(value[key], statistics[key]);
+    }
+  }
+
   onMount(() => {
     try {
       const savedGame = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
@@ -149,6 +173,7 @@
         purchasedUpgrades = restoreStringList(savedGame.purchasedUpgrades, purchasedUpgrades);
         purchasedBaseUpgrades = restoreStringList(savedGame.purchasedBaseUpgrades, purchasedBaseUpgrades);
         completedQuestIds = restoreStringList(savedGame.completedQuestIds, completedQuestIds);
+        restoreStatistics(savedGame.statistics);
       }
     } catch {
       localStorage.removeItem(SAVE_KEY);
@@ -172,7 +197,8 @@
       vehicleInventory,
       purchasedUpgrades,
       purchasedBaseUpgrades,
-      completedQuestIds
+      completedQuestIds,
+      statistics
     }));
   });
 
@@ -198,10 +224,11 @@
     if (!canCompleteQuest(quest)) return;
 
     for (const [matId, amount] of Object.entries(quest.rewards)) {
-      materials[matId] = (materials[matId] || 0) + (amount as number);
+      addResources(matId, amount as number);
     }
 
     completedQuestIds.push(quest.id);
+    statistics.questsCompleted += 1;
     awardExperience(XP_REWARDS.quest);
     questMessage = `🎉 Quest "${quest.title}" erfolgreich abgeschlossen! Belohnung erhalten.`;
 
@@ -290,8 +317,8 @@
       const inventory = selected.isVehicle ? vehicleInventory : deviceInventory;
       inventory[selected.item.id] -= 1;
 
-      for (const yieldItem of selected.item.yields) {
-        materials[yieldItem.id] += yieldItem.amount;
+        for (const yieldItem of selected.item.yields) {
+          addResources(yieldItem.id, yieldItem.amount);
       }
     }, dismantleIntervalMs);
 
@@ -340,9 +367,10 @@
 
       if (found) {
         addToInventory(deviceInventory, found.id);
+        statistics.electronicsFound += 1;
         lastDroneMessage = `🛸 Drohne mitgebracht: ${found.icon} ${found.name}`;
       } else {
-        materials.scrap += 2;
+        addResources('scrap', 2);
         lastDroneMessage = '🛸 Drohne mitgebracht: 2x Altmetall';
       }
     }, droneIntervalMs);
@@ -490,6 +518,7 @@
     if (isElectronics) {
       if (found) {
         addToInventory(deviceInventory, found.id);
+        statistics.electronicsFound += 1;
         awardExperience(XP_REWARDS.search + experienceForFoundItem(found));
         lastFoundMessage = `Gefunden: ${found.icon} ${found.name}!`;
       } else {
@@ -502,11 +531,12 @@
 
     if (found) {
       addToInventory(vehicleInventory, found.id);
+      statistics.vehiclesFound += 1;
       awardExperience(XP_REWARDS.search + experienceForFoundItem(found));
       lastVehicleMessage = `Gefunden: ${found.icon} ${found.name}!`;
     } else {
       awardExperience(XP_REWARDS.search);
-      materials.scrap += 4;
+      addResources('scrap', 4);
       lastVehicleMessage = 'Kein Auto gefunden, aber 4x Altmetall gesammelt.';
     }
   }
@@ -557,7 +587,8 @@
     if (credits < cost) return;
 
     credits -= cost;
-    materials[key] = (materials[key] || 0) + count;
+    statistics.creditsSpent += cost;
+    addResources(key, count);
   }
 
   function buyDevice(item: typeof ELECTRONICS[0], amount: number = 1) {
@@ -568,6 +599,7 @@
     if (credits < cost) return;
 
     credits -= cost;
+    statistics.creditsSpent += cost;
     deviceInventory[item.id] = (deviceInventory[item.id] || 0) + count;
   }
 
@@ -579,6 +611,7 @@
     if (credits < cost) return;
 
     credits -= cost;
+    statistics.creditsSpent += cost;
     vehicleInventory[item.id] = (vehicleInventory[item.id] || 0) + count;
   }
 
@@ -591,6 +624,7 @@
 
     materials[key] = available - actualAmount;
     credits += value;
+    statistics.creditsEarned += value;
   }
 
   function sellDevice(item: typeof ELECTRONICS[0], amount: number = 1) {
@@ -602,6 +636,7 @@
 
     deviceInventory[item.id] = available - actualAmount;
     credits += value;
+    statistics.creditsEarned += value;
   }
 
   function sellVehicle(item: typeof VEHICLES[0], amount: number = 1) {
@@ -613,6 +648,7 @@
 
     vehicleInventory[item.id] = available - actualAmount;
     credits += value;
+    statistics.creditsEarned += value;
   }
 
   // ZERLEGEN LOGIK
@@ -643,8 +679,10 @@
 
       if (dismantleProgress >= 100) {
         inv[item.id] -= 1;
+        if (isVehicle) statistics.vehiclesDismantled += 1;
+        else statistics.electronicsDismantled += 1;
         for (const yieldItem of item.yields) {
-          materials[yieldItem.id] += yieldItem.amount;
+          addResources(yieldItem.id, yieldItem.amount);
         }
         awardExperience(XP_REWARDS.dismantle);
         dismantleProgress = 0;
@@ -1223,7 +1261,36 @@
     </div>
   {/if}
 
-  <!-- TAB 6: DEV PANEL -->
+  <!-- TAB 6: STATISTIK -->
+  {#if activeTab === 'stats'}
+    <div class="tab-content">
+      <h2>📊 ScrapBot-Statistik</h2>
+      <p class="tab-sub">Deine bisherige Leistung im Hauptquartier auf einen Blick.</p>
+
+      <div class="statistics-grid">
+        <div class="stat-card"><span class="stat-icon">📦</span><strong>{statistics.resourcesCollected}</strong><span>Ressourcen gesammelt</span></div>
+        <div class="stat-card"><span class="stat-icon">🚗</span><strong>{statistics.vehiclesFound}</strong><span>Autos gefunden</span></div>
+        <div class="stat-card"><span class="stat-icon">🔧</span><strong>{statistics.vehiclesDismantled}</strong><span>Autos zerlegt</span></div>
+        <div class="stat-card"><span class="stat-icon">📻</span><strong>{statistics.electronicsFound}</strong><span>Geräte gefunden</span></div>
+        <div class="stat-card"><span class="stat-icon">⚙️</span><strong>{statistics.electronicsDismantled}</strong><span>Geräte zerlegt</span></div>
+        <div class="stat-card"><span class="stat-icon">📜</span><strong>{statistics.questsCompleted}</strong><span>Aufträge erledigt</span></div>
+        <div class="stat-card"><span class="stat-icon">💰</span><strong>{statistics.creditsEarned}</strong><span>Credits verdient</span></div>
+        <div class="stat-card"><span class="stat-icon">🛒</span><strong>{statistics.creditsSpent}</strong><span>Credits ausgegeben</span></div>
+      </div>
+
+      <h3 class="statistics-heading">Aktueller Rohstoffbestand</h3>
+      <div class="statistics-materials">
+        {#each Object.entries(MATERIALS) as [key, material]}
+          <div class="statistics-material">
+            <span>{material.icon} {material.name}</span>
+            <strong>{materials[key] || 0}</strong>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
+  <!-- TAB 7: DEV PANEL -->
   {#if activeTab === 'dev' && isAdmin}
     <div class="tab-content dev-panel">
       <h2>🛠️ Entwickler & Cheat Panel</h2>
@@ -1345,6 +1412,61 @@
     color: #94a3b8;
     margin-top: -0.5rem;
     margin-bottom: 1.5rem;
+  }
+
+  .statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+  }
+
+  .stat-card .stat-icon {
+    font-size: 1.35rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.5rem;
+    color: #f8fafc;
+  }
+
+  .stat-card span:last-child {
+    color: #94a3b8;
+    font-size: 0.8rem;
+  }
+
+  .statistics-heading {
+    margin: 1.75rem 0 0.75rem;
+  }
+
+  .statistics-materials {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .statistics-material {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #cbd5e1;
+  }
+
+  .statistics-material strong {
+    color: #f8fafc;
   }
 
   /* STYLES FÜR ROBOTER-PROFIL CARD */

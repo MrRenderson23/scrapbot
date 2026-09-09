@@ -22,7 +22,8 @@
     ['schrott', '🔍 Schrottplatz'],
     ['zerlegen', '⚙️ Werkbank'],
     ['upgrades', '🤖 Upgrades'],
-    ['quests', '📜 Aufträge']
+    ['quests', '📜 Aufträge'],
+    ['stats', '📊 Statistik']
   ];
 
   const gameVersion = packageJson.version;
