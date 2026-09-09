@@ -14,7 +14,7 @@ src/
     game/
       inventory.ts          gemeinsame Inventarregeln
       market.ts             Marktpreise und Mengenregeln
-      progression.ts        XP, Level und Upgrade-Freischaltungen
+      progression.ts        XP, Level, Talente und Upgrade-Freischaltungen
     components/
       GameHeader.svelte     Header und Tab-Navigation
       RobotSidebar.svelte   rechte Roboter-Seitenleiste
@@ -273,6 +273,20 @@ export const UPGRADE_REQUIRED_LEVELS = {
 
 Die XP und der aktuelle Level werden in der rechten Roboter-Seitenleiste angezeigt. Neue Aktionen können später einfach mit `awardExperience(...)` in der Spielseite angeschlossen werden.
 
+## Skills und Talentbaum
+
+Der Tab **🌿 Skills** enthält drei Talentzweige:
+
+- **Bergung**: bessere Fundgewichte, zusätzliche Rohstoffe und seltene Funde
+- **Zerlegung**: kürzere Zerlegezeiten, zusätzliche Erträge und mehr XP
+- **Technik**: mehr maximale Energie, günstigere Drohnenaktionen und Marktpreise
+
+Ab Level 2 gibt jedes weitere Level einen Talentpunkt. Talente werden als Ränge
+gekauft und müssen innerhalb eines Zweigs der Reihe nach freigeschaltet werden.
+Die Definitionen liegen in `src/lib/game/progression.ts`; die gekauften Ränge
+werden in `src/routes/+page.svelte` gespeichert. Der Admin-Bereich enthält einen
+Reset für alle Talente.
+
 ## Admin- und Dev-Panel
 
 Am unteren Seitenrand kann mit dem Passwort `admin` oder `cheat` der Admin-Modus
@@ -286,6 +300,7 @@ geöffnet werden. Das Dev-Panel enthält Testfunktionen für:
 - alle Statistikzähler zurücksetzen
 - das Credit-Guthaben auf `0` setzen
 - XP und Roboter-Level auf den Startwert zurücksetzen
+- alle Talente und Talentpunkte zurücksetzen
 - alle Roboter-Upgrades zurücksetzen
 - alle Basis-Upgrades zurücksetzen
 

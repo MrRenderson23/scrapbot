@@ -22,6 +22,7 @@
     ['schrott', '🔍 Schrottplatz'],
     ['zerlegen', '⚙️ Werkbank'],
     ['upgrades', '🤖 Upgrades'],
+    ['skills', '🌿 Skills'],
     ['quests', '📜 Aufträge'],
     ['stats', '📊 Statistik']
   ];

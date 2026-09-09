@@ -16,7 +16,9 @@
     getLevelForXp,
     requiredUpgradeLevel,
     xpForNextLevel,
-    xpIntoCurrentLevel
+    xpIntoCurrentLevel,
+    TALENTS,
+    type TalentBranch
   } from '$lib/game/progression.js';
   import GameHeader from '$lib/components/GameHeader.svelte';
   import RobotSidebar from '$lib/components/RobotSidebar.svelte';
@@ -63,6 +65,21 @@
   let playerLevel = $derived(getLevelForXp(experiencePoints));
   let currentLevelXp = $derived(xpIntoCurrentLevel(experiencePoints));
   let nextLevelXp = $derived(xpForNextLevel(playerLevel));
+  let purchasedTalents = $state<string[]>([]);
+  let spentTalentPoints = $derived(purchasedTalents.length);
+  let availableTalentPoints = $derived(Math.max(0, playerLevel - 1 - spentTalentPoints));
+
+  function talentRank(talentId: string) {
+    return purchasedTalents.filter(id => id === talentId).length;
+  }
+
+  function talentBonus(talentId: string) {
+    return talentRank(talentId);
+  }
+
+  function talentsForBranch(branch: TalentBranch) {
+    return TALENTS.filter(talent => talent.branch === branch);
+  }
 
   function awardExperience(amount: number) {
     experiencePoints += Math.max(0, amount);
@@ -70,7 +87,7 @@
 
   function buyBatteries(amount: number = 1) {
     const count = Math.max(1, Math.floor(amount));
-    const cost = BATTERY_PRICE * count;
+    const cost = marketCost(BATTERY_PRICE * count);
     if (credits < cost) return;
 
     credits -= cost;
@@ -164,6 +181,14 @@
     resourcesCollectedByType[key] = (resourcesCollectedByType[key] || 0) + actualAmount;
   }
 
+  function marketCost(baseCost: number) {
+    return Math.ceil(baseCost * (1 - talentBonus('market_network') * 0.05));
+  }
+
+  function dismantleYieldAmount(amount: number, yieldIndex: number) {
+    return amount + (yieldIndex === 0 ? talentBonus('clean_dismantling') : 0);
+  }
+
   function restoreStatistics(value: unknown) {
     if (!isRecord(value)) return;
 
@@ -189,6 +214,7 @@
         purchasedUpgrades = restoreStringList(savedGame.purchasedUpgrades, purchasedUpgrades);
         purchasedBaseUpgrades = restoreStringList(savedGame.purchasedBaseUpgrades, purchasedBaseUpgrades);
         completedQuestIds = restoreStringList(savedGame.completedQuestIds, completedQuestIds);
+        purchasedTalents = restoreStringList(savedGame.purchasedTalents, purchasedTalents);
         restoreStatistics(savedGame.statistics);
         resourcesCollectedByType = restoreNumberMap(savedGame.resourcesCollectedByType, resourcesCollectedByType);
       }
@@ -215,6 +241,7 @@
       purchasedUpgrades,
       purchasedBaseUpgrades,
       completedQuestIds,
+      purchasedTalents,
       statistics,
       resourcesCollectedByType
     }));
@@ -335,8 +362,8 @@
       const inventory = selected.isVehicle ? vehicleInventory : deviceInventory;
       inventory[selected.item.id] -= 1;
 
-        for (const yieldItem of selected.item.yields) {
-          addResources(yieldItem.id, yieldItem.amount, 'auto');
+        for (const [yieldIndex, yieldItem] of selected.item.yields.entries()) {
+          addResources(yieldItem.id, dismantleYieldAmount(yieldItem.amount, yieldIndex), 'auto');
       }
         if (selected.isVehicle) statistics.autoVehiclesDismantled += 1;
         else statistics.autoElectronicsDismantled += 1;
@@ -354,13 +381,13 @@
 
     if (purchasedBaseUpgrades.includes('scout_drone_mk3')) {
       droneIntervalMs = 10000;
-      droneEnergyCost = 5;
+      droneEnergyCost = Math.max(1, 5 - talentBonus('drone_protocols'));
     } else if (purchasedBaseUpgrades.includes('scout_drone_mk2')) {
       droneIntervalMs = 20000;
-      droneEnergyCost = 8;
+      droneEnergyCost = Math.max(1, 8 - talentBonus('drone_protocols'));
     } else if (purchasedBaseUpgrades.includes('scout_drone_mk1')) {
       droneIntervalMs = 30000;
-      droneEnergyCost = 10;
+      droneEnergyCost = Math.max(1, 10 - talentBonus('drone_protocols'));
     }
 
     if (droneIntervalMs === 0) return;
@@ -454,6 +481,12 @@
     experiencePoints = 0;
   }
 
+  function resetTalents() {
+    if (!confirm('Wirklich alle Talentpunkte und Talente zurücksetzen?')) return;
+
+    purchasedTalents = [];
+  }
+
   function resetRobotUpgrades() {
     if (!confirm('Wirklich alle Roboter-Upgrades zurücksetzen?')) return;
 
@@ -491,6 +524,22 @@
     maxEnergy = 150;
     energy = maxEnergy;
   }
+
+  function buyTalent(talentId: string) {
+    const talent = TALENTS.find(entry => entry.id === talentId);
+    if (!talent || availableTalentPoints <= 0) return;
+    if (playerLevel < talent.requiredLevel || talentRank(talent.id) >= talent.maxRank) return;
+    if (talent.requires && talentRank(talent.requires) === 0) return;
+
+    purchasedTalents.push(talent.id);
+  }
+
+  $effect(() => {
+    const energyBonus = talentBonus('efficient_core') * 10;
+    const upgradeBonus = purchasedUpgrades.includes('solar_battery') ? 50 : 0;
+    maxEnergy = 100 + upgradeBonus + energyBonus;
+    energy = Math.min(energy, maxEnergy);
+  });
 
   // KAUF-LOGIK (ROBOTER)
   type RobotUpgradeCost = { id: string; amount: number };
@@ -592,7 +641,10 @@
     const rand = Math.random();
     const weightedItems = list.map(item => ({
       item,
-      weight: item.findChance + (hasRadar && item.findChance <= 0.05 ? 0.08 : 0)
+      weight: item.findChance
+        * (1 + talentBonus('scavenger_instinct') * 0.05)
+        + (hasRadar && item.findChance <= 0.05 ? 0.08 : 0)
+        + (talentBonus('deep_scan') > 0 && item.findChance <= 0.12 ? 0.08 : 0)
     }));
     const totalWeight = weightedItems.reduce((total, entry) => total + entry.weight, 0);
     let cumulative = 0;
@@ -611,11 +663,11 @@
         addToInventory(deviceInventory, found.id);
         statistics.electronicsFound += 1;
         statistics.playerElectronicsFound += 1;
-        awardExperience(XP_REWARDS.search + experienceForFoundItem(found));
+        awardExperience((XP_REWARDS.search + experienceForFoundItem(found)) * (1 + talentBonus('salvage_mastery') * 0.15));
         lastFoundMessage = `Gefunden: ${found.icon} ${found.name}!`;
       } else {
-        awardExperience(XP_REWARDS.search);
-        addResources('scrap', 2);
+        awardExperience(XP_REWARDS.search * (1 + talentBonus('salvage_mastery') * 0.15));
+        addResources('scrap', 2 + talentBonus('resource_finder'));
         lastFoundMessage = 'Kein Gerät gefunden, aber 2x Altmetall gesammelt.';
       }
       return;
@@ -625,11 +677,11 @@
       addToInventory(vehicleInventory, found.id);
       statistics.vehiclesFound += 1;
       statistics.playerVehiclesFound += 1;
-      awardExperience(XP_REWARDS.search + experienceForFoundItem(found));
+      awardExperience((XP_REWARDS.search + experienceForFoundItem(found)) * (1 + talentBonus('salvage_mastery') * 0.15));
       lastVehicleMessage = `Gefunden: ${found.icon} ${found.name}!`;
     } else {
-      awardExperience(XP_REWARDS.search);
-      addResources('scrap', 4);
+      awardExperience(XP_REWARDS.search * (1 + talentBonus('salvage_mastery') * 0.15));
+      addResources('scrap', 4 + talentBonus('resource_finder'));
       lastVehicleMessage = 'Kein Auto gefunden, aber 4x Altmetall gesammelt.';
     }
   }
@@ -676,7 +728,7 @@
     const count = Math.max(0, Math.floor(amount));
     if (count <= 0) return;
 
-    const cost = marketBuyPrice(MATERIAL_SELL_VALUES[key] || 0) * count;
+    const cost = marketCost(marketBuyPrice(MATERIAL_SELL_VALUES[key] || 0) * count);
     if (credits < cost) return;
 
     credits -= cost;
@@ -688,7 +740,7 @@
     const count = Math.max(0, Math.floor(amount));
     if (count <= 0) return;
 
-    const cost = marketBuyPrice(item.sellValue || 0) * count;
+    const cost = marketCost(marketBuyPrice(item.sellValue || 0) * count);
     if (credits < cost) return;
 
     credits -= cost;
@@ -700,7 +752,7 @@
     const count = Math.max(0, Math.floor(amount));
     if (count <= 0) return;
 
-    const cost = marketBuyPrice(item.sellValue || 0) * count;
+    const cost = marketCost(marketBuyPrice(item.sellValue || 0) * count);
     if (credits < cost) return;
 
     credits -= cost;
@@ -763,7 +815,8 @@
         : purchasedUpgrades.includes('laser_cutter_mk1')
           ? 0.85
           : 1.0;
-    const durationMs = item.dismantleTimeSec * 1000 * speedBonus;
+    const talentSpeedBonus = Math.max(0.5, 1 - talentBonus('quick_disassembly') * 0.08);
+    const durationMs = item.dismantleTimeSec * 1000 * speedBonus * talentSpeedBonus;
     const stepTime = 50;
     const increment = (stepTime / durationMs) * 100;
 
@@ -779,10 +832,10 @@
           statistics.electronicsDismantled += 1;
           statistics.playerElectronicsDismantled += 1;
         }
-        for (const yieldItem of item.yields) {
-          addResources(yieldItem.id, yieldItem.amount);
+        for (const [yieldIndex, yieldItem] of item.yields.entries()) {
+          addResources(yieldItem.id, dismantleYieldAmount(yieldItem.amount, yieldIndex));
         }
-        awardExperience(XP_REWARDS.dismantle);
+        awardExperience(XP_REWARDS.dismantle * (1 + talentBonus('salvage_mastery') * 0.15));
         dismantleProgress = 0;
         if (inv[item.id] <= 0) stopDismantling();
       }
@@ -1432,7 +1485,53 @@
     </div>
   {/if}
 
-  <!-- TAB 7: DEV PANEL -->
+  <!-- TAB 7: SKILLS -->
+  {#if activeTab === 'skills'}
+    <div class="tab-content">
+      <div class="skills-header">
+        <div>
+          <h2>🌿 Skills & Talente</h2>
+          <p class="tab-sub">Baue deinen ScrapBot mit jedem Level weiter aus.</p>
+        </div>
+        <div class="talent-points-badge">✨ {availableTalentPoints} Talentpunkte verfügbar</div>
+      </div>
+
+      <div class="talent-tree">
+        {#each [
+          { id: 'bergung' as TalentBranch, title: 'Bergung', icon: '🧭', description: 'Bessere Funde und mehr Rohstoffe' },
+          { id: 'zerlegung' as TalentBranch, title: 'Zerlegung', icon: '⚙️', description: 'Schneller zerlegen und mehr Ertrag' },
+          { id: 'technik' as TalentBranch, title: 'Technik', icon: '🔋', description: 'Energie, Drohne und Markt' }
+        ] as branch}
+          <section class="talent-branch">
+            <div class="talent-branch-header">
+              <span class="talent-branch-icon">{branch.icon}</span>
+              <div><h3>{branch.title}</h3><p>{branch.description}</p></div>
+            </div>
+            <div class="talent-branch-path">
+              {#each talentsForBranch(branch.id) as talent, talentIndex}
+                {@const rank = talentRank(talent.id)}
+                {@const prerequisiteMet = !talent.requires || talentRank(talent.requires) > 0}
+                {@const canBuy = availableTalentPoints > 0 && playerLevel >= talent.requiredLevel && prerequisiteMet && rank < talent.maxRank}
+                {#if talentIndex > 0}<div class="talent-connector"></div>{/if}
+                <button class="talent-node" class:unlocked={rank > 0} class:maxed={rank >= talent.maxRank} class:locked={!canBuy && rank === 0} disabled={!canBuy} onclick={() => buyTalent(talent.id)}>
+                  <span class="talent-icon">{talent.icon}</span>
+                  <span class="talent-name">{talent.name}</span>
+                  <span class="talent-rank">Rang {rank} / {talent.maxRank}</span>
+                  <span class="talent-description">{talent.description}</span>
+                  {#if rank === 0 && playerLevel < talent.requiredLevel}<span class="talent-requirement">🔒 Ab Level {talent.requiredLevel}</span>
+                  {:else if rank === 0 && !prerequisiteMet}<span class="talent-requirement">🔒 Vorheriges Talent nötig</span>
+                  {:else if rank >= talent.maxRank}<span class="talent-requirement talent-complete">✓ Voll ausgebaut</span>
+                  {:else}<span class="talent-requirement">+1 Rang kaufen</span>{/if}
+                </button>
+              {/each}
+            </div>
+          </section>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
+  <!-- TAB 8: DEV PANEL -->
   {#if activeTab === 'dev' && isAdmin}
     <div class="tab-content dev-panel">
       <h2>🛠️ Entwickler & Cheat Panel</h2>
@@ -1456,6 +1555,7 @@
           <button class="cheat-btn danger" onclick={resetStatistics}>📊 Statistiken zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetCredits}>💳 Credits zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetProgression}>🔄 Level & XP zurücksetzen</button>
+          <button class="cheat-btn danger" onclick={resetTalents}>🌿 Talente zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetRobotUpgrades}>🤖 Roboter-Upgrades zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetBaseUpgrades}>🏗️ Basis-Upgrades zurücksetzen</button>
         </div>
@@ -1624,6 +1724,102 @@
 
   .statistics-material strong {
     color: #f8fafc;
+  }
+
+  .skills-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .skills-header .tab-sub { margin-bottom: 0; }
+
+  .talent-points-badge {
+    padding: 0.6rem 0.8rem;
+    color: #fef3c7;
+    background: #713f12;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .talent-tree {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .talent-branch {
+    min-width: 0;
+    padding: 1rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+  }
+
+  .talent-branch-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #334155;
+  }
+
+  .talent-branch-icon { font-size: 1.6rem; }
+  .talent-branch-header h3 { margin: 0; color: #f8fafc; }
+  .talent-branch-header p { margin: 0.2rem 0 0; color: #94a3b8; font-size: 0.75rem; }
+
+  .talent-branch-path {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 0.85rem;
+  }
+
+  .talent-connector {
+    width: 2px;
+    height: 0.8rem;
+    margin: 0 auto;
+    background: #475569;
+  }
+
+  .talent-node {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.25rem 0.55rem;
+    width: 100%;
+    padding: 0.75rem;
+    color: #cbd5e1;
+    text-align: left;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .talent-node:hover:not(:disabled) { border-color: #38bdf8; background: #243b53; }
+  .talent-node:disabled { cursor: not-allowed; opacity: 0.65; }
+  .talent-node.unlocked { border-color: #22c55e; }
+  .talent-node.maxed { background: #14532d; }
+  .talent-node.locked { border-color: #475569; }
+  .talent-icon { grid-row: span 2; font-size: 1.35rem; }
+  .talent-name { color: #f8fafc; font-weight: 700; font-size: 0.85rem; }
+  .talent-rank { color: #facc15; font-size: 0.7rem; text-align: right; }
+  .talent-description { grid-column: 2 / 4; color: #94a3b8; font-size: 0.72rem; line-height: 1.35; }
+  .talent-requirement { grid-column: 2 / 4; color: #38bdf8; font-size: 0.7rem; }
+  .talent-complete { color: #86efac; }
+
+  @media (max-width: 900px) {
+    .talent-tree { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .skills-header { flex-direction: column; }
+    .talent-points-badge { width: 100%; box-sizing: border-box; }
   }
 
   /* STYLES FÜR ROBOTER-PROFIL CARD */
