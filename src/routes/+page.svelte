@@ -1147,9 +1147,9 @@
             <button 
               class="dismantle-btn" 
               disabled={count <= 0 || (activeDismantleId !== null && activeDismantleId !== item.id)}
-              onclick={() => startDismantling(item, false)}
+              onclick={() => activeDismantleId === item.id ? stopDismantling() : startDismantling(item, false)}
             >
-              {activeDismantleId === item.id ? 'Zerlege...' : 'Zerlegen'}
+              {activeDismantleId === item.id ? '⏹ Abbrechen' : 'Zerlegen'}
             </button>
           </div>
         {/each}
@@ -1187,9 +1187,9 @@
             <button 
               class="dismantle-btn" 
               disabled={count <= 0 || (activeDismantleId !== null && activeDismantleId !== vehicle.id)}
-              onclick={() => startDismantling(vehicle, true)}
+              onclick={() => activeDismantleId === vehicle.id ? stopDismantling() : startDismantling(vehicle, true)}
             >
-              {activeDismantleId === vehicle.id ? 'Zerlege...' : 'Zerlegen'}
+              {activeDismantleId === vehicle.id ? '⏹ Abbrechen' : 'Zerlegen'}
             </button>
           </div>
         {/each}
