@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { 
     MATERIALS, 
     ROBOT_UPGRADES, 
@@ -19,6 +20,8 @@
   } from '$lib/game/progression.js';
   import GameHeader from '$lib/components/GameHeader.svelte';
   import RobotSidebar from '$lib/components/RobotSidebar.svelte';
+
+  const SAVE_KEY = 'scrapbot-save-v1';
 
   // --- SPIEL-ZUSTAND ---
   let activeTab = $state('basis');
@@ -102,6 +105,76 @@
   // QUEST-ZUSTAND
   let completedQuestIds = $state<string[]>([]);
   let questMessage = $state('');
+  let saveReady = $state(false);
+
+  function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  function restoreNumber(value: unknown, fallback: number) {
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  }
+
+  function restoreNumberMap(value: unknown, fallback: Record<string, number>) {
+    if (!isRecord(value)) return fallback;
+
+    return Object.fromEntries(
+      Object.entries(fallback).map(([key, defaultValue]) => [
+        key,
+        restoreNumber(value[key], defaultValue)
+      ])
+    );
+  }
+
+  function restoreStringList(value: unknown, fallback: string[]) {
+    return Array.isArray(value) && value.every(item => typeof item === 'string')
+      ? value
+      : fallback;
+  }
+
+  onMount(() => {
+    try {
+      const savedGame = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+
+      if (isRecord(savedGame)) {
+        activeTab = typeof savedGame.activeTab === 'string' ? savedGame.activeTab : activeTab;
+        energy = restoreNumber(savedGame.energy, energy);
+        maxEnergy = restoreNumber(savedGame.maxEnergy, maxEnergy);
+        materials = restoreNumberMap(savedGame.materials, materials);
+        credits = restoreNumber(savedGame.credits, credits);
+        batteries = restoreNumber(savedGame.batteries, batteries);
+        experiencePoints = restoreNumber(savedGame.experiencePoints, experiencePoints);
+        deviceInventory = restoreNumberMap(savedGame.deviceInventory, deviceInventory);
+        vehicleInventory = restoreNumberMap(savedGame.vehicleInventory, vehicleInventory);
+        purchasedUpgrades = restoreStringList(savedGame.purchasedUpgrades, purchasedUpgrades);
+        purchasedBaseUpgrades = restoreStringList(savedGame.purchasedBaseUpgrades, purchasedBaseUpgrades);
+        completedQuestIds = restoreStringList(savedGame.completedQuestIds, completedQuestIds);
+      }
+    } catch {
+      localStorage.removeItem(SAVE_KEY);
+    } finally {
+      saveReady = true;
+    }
+  });
+
+  $effect(() => {
+    if (!saveReady) return;
+
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      activeTab,
+      energy,
+      maxEnergy,
+      materials,
+      credits,
+      batteries,
+      experiencePoints,
+      deviceInventory,
+      vehicleInventory,
+      purchasedUpgrades,
+      purchasedBaseUpgrades,
+      completedQuestIds
+    }));
+  });
 
   function isReqFulfilled(req: any) {
     if (req.type === 'material') {
