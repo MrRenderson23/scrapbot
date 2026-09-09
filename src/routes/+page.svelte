@@ -448,6 +448,12 @@
     credits = 0;
   }
 
+  function resetProgression() {
+    if (!confirm('Wirklich XP und Roboter-Level zurücksetzen?')) return;
+
+    experiencePoints = 0;
+  }
+
   function resetRobotUpgrades() {
     if (!confirm('Wirklich alle Roboter-Upgrades zurücksetzen?')) return;
 
@@ -1449,6 +1455,7 @@
           <button class="cheat-btn danger" onclick={resetStorage}>🗑️ Lager zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetStatistics}>📊 Statistiken zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetCredits}>💳 Credits zurücksetzen</button>
+          <button class="cheat-btn danger" onclick={resetProgression}>🔄 Level & XP zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetRobotUpgrades}>🤖 Roboter-Upgrades zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetBaseUpgrades}>🏗️ Basis-Upgrades zurücksetzen</button>
         </div>

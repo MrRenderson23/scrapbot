@@ -285,13 +285,15 @@ geöffnet werden. Das Dev-Panel enthält Testfunktionen für:
 - das gesamte Lager leeren
 - alle Statistikzähler zurücksetzen
 - das Credit-Guthaben auf `0` setzen
+- XP und Roboter-Level auf den Startwert zurücksetzen
 - alle Roboter-Upgrades zurücksetzen
 - alle Basis-Upgrades zurücksetzen
 
 Die beiden Reset-Aktionen verlangen vor dem Löschen eine Bestätigung. Ein
 Lager-Reset entfernt Rohstoffe, Geräte, Fahrzeuge und Batterien, lässt aber XP,
-Upgrades und Aufträge unangetastet. Die beiden Upgrade-Resets verändern weder
-XP noch Lager, Statistiken oder Aufträge.
+Upgrades und Aufträge unangetastet. Der XP-Reset setzt die Erfahrung auf `0`,
+wodurch der abgeleitete Roboter-Level wieder bei `1` beginnt. Die beiden
+Upgrade-Resets verändern weder XP noch Lager, Statistiken oder Aufträge.
 
 Die Admin-Funktionen sind für Entwicklung und Tests gedacht und nicht als reguläre
 Spielmechanik vorgesehen.
