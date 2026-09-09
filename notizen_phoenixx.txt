@@ -1,0 +1,27 @@
+Wie sollen wir als Nächstes an ScrapBot weiterarbeiten? Hier sind ein paar Vorschläge:
+
+    💾 Speichern & Laden (LocalStorage)
+
+        Automatischen Speicherstand im Browser-Speicher ablegen, damit der Fortschritt beim Neuladen der Seite nicht verloren geht.
+
+        "Spiel zurücksetzen"-Button im Dev-Panel.
+
+    ⚖️ Game-Balancing & Item-Nutzen
+
+        Das Upgrade diamond_blade (Diamant-Trennscheibe) ist in data.js angelegt, hat aber im Svelte-Code derzeit noch keinen Effekt (z. B. Ertragserhöhung beim Zerlegen).
+
+        Das Upgrade radar_eyes (Infrarot-Radar) hat in der Such-Logik noch keine Auswirkung auf die Drop-Chancen.
+
+    🏬 Händler / Schrotthändler (Neuer Tab)
+
+        Bauteile oder gefundene Geräte gegen eine Währung (z. B. Schrott-Münzen 🪙) verkaufen.
+
+        Seltene Bauteile oder Pläne direkt kaufen.
+
+    📜 Quests / Aufträge
+
+        "Schaffe 5x Altmetall und 2x Mikrochips herbei für Belohnung X."
+
+    🎨 UI & Design-Feinschliff
+
+        Tooltips, Animationen für Fortschrittsbalken oder visuelle Benachrichtigungen (Toast-Notifications) bei Funden.
