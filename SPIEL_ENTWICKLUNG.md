@@ -264,6 +264,19 @@ export const UPGRADE_REQUIRED_LEVELS = {
 
 Die XP und der aktuelle Level werden in der rechten Roboter-Seitenleiste angezeigt. Neue Aktionen können später einfach mit `awardExperience(...)` in der Spielseite angeschlossen werden.
 
+## Admin- und Dev-Panel
+
+Am unteren Seitenrand kann mit dem Passwort `admin` oder `cheat` der Admin-Modus
+geöffnet werden. Das Dev-Panel enthält Testfunktionen für:
+
+- volle Energie
+- zusätzliche XP (`+100 XP` und `+1.000 XP`)
+- sofortiges Freischalten aller Roboter- und Basis-Upgrades einschließlich aller Stufen
+- Rohstoffe, Geräte und Fahrzeuge zum Testen hinzufügen
+
+Die Admin-Funktionen sind für Entwicklung und Tests gedacht und nicht als reguläre
+Spielmechanik vorgesehen.
+
 ## Batterien und Energie
 
 Batterien werden direkt in `src/routes/+page.svelte` über diese beiden Werte gesteuert:

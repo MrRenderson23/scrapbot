@@ -401,6 +401,30 @@
     energy = maxEnergy;
   }
 
+  function cheatAddExperience(amount: number) {
+    experiencePoints += Math.max(0, amount);
+  }
+
+  function cheatUnlockAllUpgrades() {
+    for (const upgrade of ROBOT_UPGRADES) {
+      const levels = robotUpgradeLevels(upgrade);
+      const ids = levels.length > 0 ? levels.map(level => level.id) : [upgrade.id];
+      for (const id of ids) {
+        if (!purchasedUpgrades.includes(id)) purchasedUpgrades.push(id);
+      }
+    }
+
+    for (const upgrade of BASE_UPGRADES) {
+      const ids = upgrade.levels?.map(level => level.id) || [upgrade.id];
+      for (const id of ids) {
+        if (!purchasedBaseUpgrades.includes(id)) purchasedBaseUpgrades.push(id);
+      }
+    }
+
+    maxEnergy = 150;
+    energy = maxEnergy;
+  }
+
   // KAUF-LOGIK (ROBOTER)
   type RobotUpgradeCost = { id: string; amount: number };
   type RobotUpgradeLevel = { id: string; name: string; speedMultiplier: number; costs: RobotUpgradeCost[] };
@@ -1299,6 +1323,9 @@
         <h3>⚡ Schnell-Aktionen</h3>
         <div class="cheat-actions">
           <button class="cheat-btn highlight" onclick={cheatFullEnergy}>⚡ Energie voll aufladen (100%)</button>
+          <button class="cheat-btn highlight" onclick={() => cheatAddExperience(100)}>✨ +100 XP</button>
+          <button class="cheat-btn highlight" onclick={() => cheatAddExperience(1000)}>🚀 +1.000 XP</button>
+          <button class="cheat-btn highlight" onclick={cheatUnlockAllUpgrades}>🤖 Alle Upgrades freischalten</button>
           <button class="cheat-btn highlight" onclick={() => cheatSetAllMaterials(500)}>📦 Alle Rohstoffe auf 500 setzen</button>
           <button class="cheat-btn highlight" onclick={() => cheatSetAllMaterials(5000)}>🚀 Max Ressourcen (5.000)</button>
         </div>
