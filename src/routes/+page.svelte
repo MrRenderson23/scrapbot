@@ -811,16 +811,6 @@
               <div class="robot-leg robot-leg-left"></div>
               <div class="robot-leg robot-leg-right"></div>
             </div>
-            {#if purchasedUpgrades.includes('solar_battery')}
-              <span class="robot-module-label module-energy">🔋 Kern-Kondensator</span>
-            {/if}
-            {#if purchasedUpgrades.includes('radar_eyes')}
-              <span class="robot-module-label module-radar">👁️ Infrarot-Radar</span>
-            {/if}
-            {#if purchasedUpgrades.some(id => id.startsWith('laser_cutter_mk'))}
-              {@const laserLevel = purchasedUpgrades.includes('laser_cutter_mk3') ? 'Mk.3' : purchasedUpgrades.includes('laser_cutter_mk2') ? 'Mk.2' : 'Mk.1'}
-              <span class="robot-module-label module-cutter">🔥 Plasmabrenner {laserLevel}</span>
-            {/if}
           </div>
           <div class="robot-avatar-caption">{robotAvatar()}</div>
           <h3>ScrapBot Model-X</h3>
@@ -1786,21 +1776,6 @@
     min-height: 1.5rem;
     font-size: 1.25rem;
   }
-
-  .robot-module-label {
-    position: absolute;
-    padding: 0.25rem 0.4rem;
-    color: #e2e8f0;
-    background: #0f172a;
-    border: 1px solid #475569;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    white-space: nowrap;
-  }
-
-  .module-energy { left: 8px; bottom: 45px; }
-  .module-radar { right: 8px; top: 45px; }
-  .module-cutter { right: 8px; bottom: 72px; }
 
   @keyframes robot-hover {
     0%, 100% { transform: translateX(-50%) translateY(0); }
