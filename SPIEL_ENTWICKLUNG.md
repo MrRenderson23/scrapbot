@@ -284,6 +284,7 @@ geöffnet werden. Das Dev-Panel enthält Testfunktionen für:
 - Rohstoffe, Geräte und Fahrzeuge zum Testen hinzufügen
 - das gesamte Lager leeren
 - alle Statistikzähler zurücksetzen
+- das Credit-Guthaben auf `0` setzen
 - alle Roboter-Upgrades zurücksetzen
 - alle Basis-Upgrades zurücksetzen
 

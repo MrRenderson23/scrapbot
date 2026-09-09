@@ -442,6 +442,12 @@
     }
   }
 
+  function resetCredits() {
+    if (!confirm('Wirklich alle Credits auf null setzen?')) return;
+
+    credits = 0;
+  }
+
   function resetRobotUpgrades() {
     if (!confirm('Wirklich alle Roboter-Upgrades zurücksetzen?')) return;
 
@@ -1442,6 +1448,7 @@
         <div class="cheat-actions">
           <button class="cheat-btn danger" onclick={resetStorage}>🗑️ Lager zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetStatistics}>📊 Statistiken zurücksetzen</button>
+          <button class="cheat-btn danger" onclick={resetCredits}>💳 Credits zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetRobotUpgrades}>🤖 Roboter-Upgrades zurücksetzen</button>
           <button class="cheat-btn danger" onclick={resetBaseUpgrades}>🏗️ Basis-Upgrades zurücksetzen</button>
         </div>
