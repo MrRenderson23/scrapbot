@@ -80,32 +80,4 @@ export const ELECTRONICS = [
       { id: 'copper', amount: 3 }
     ]
   },
-  {
-    id: 'TestItem',
-    name: 'Tester Item',
-    icon: '🎹',
-    findChance: 0.99,
-    dismantleTimeSec: 10,
-    sellValue: 120,
-    yields: [
-      { id: 'chips', amount: 4 },
-      { id: 'resistors', amount: 8 },
-      { id: 'diodes', amount: 6 },
-      { id: 'copper', amount: 3 }
-    ]
-  },
-  {
-    id: 'TestItem2',
-    name: 'Tester Item 2',
-    icon: '🎹',
-    findChance: 0.53,
-    dismantleTimeSec: 10,
-    sellValue: 120,
-    yields: [
-      { id: 'chips', amount: 22 },
-      { id: 'resistors', amount: 2 },
-      { id: 'diodes', amount: 2 },
-      { id: 'copper', amount: 2 }
-    ]
-  }
 ];
