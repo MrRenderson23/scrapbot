@@ -1,4 +1,6 @@
 <script lang="ts">
+  import packageJson from '../../../package.json';
+
   let {
     robotAvatar,
     credits,
@@ -22,11 +24,17 @@
     ['upgrades', '🤖 Upgrades'],
     ['quests', '📜 Aufträge']
   ];
+
+  const gameVersion = packageJson.version;
 </script>
 
 <header class="game-header">
   <div class="header-main">
-    <h1><span class="robot-avatar">{robotAvatar}</span> ScrapBot HQ</h1>
+    <h1>
+      <span class="robot-avatar">{robotAvatar}</span>
+      <span>ScrapBot HQ</span>
+      <span class="version-badge">v{gameVersion}</span>
+    </h1>
     <div class="stats-row">
       <div class="credits-box">
         <span>💰 Credits: {credits}</span>
@@ -68,6 +76,17 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .version-badge {
+    color: #94a3b8;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: #0f172a;
+    border: 1px solid #334155;
+    padding: 0.25rem 0.45rem;
+    border-radius: 999px;
   }
 
   .stats-row {
