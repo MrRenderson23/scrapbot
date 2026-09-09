@@ -5,7 +5,7 @@ export const ELECTRONICS = [
     name: 'Alter Wecker',
     icon: '⏰',
     findChance: 0.35,
-    dismantleTimeSec: 30,
+    dismantleTimeSec: 5,
     sellValue: 20,
     yields: [
       { id: 'scrap', amount: 1 },
@@ -44,7 +44,7 @@ export const ELECTRONICS = [
     name: 'Kassettenradio',
     icon: '📻',
     findChance: 0.12,
-    dismantleTimeSec: 45,
+    dismantleTimeSec: 30,
     sellValue: 52,
     yields: [
       { id: 'copper', amount: 3 },
@@ -58,7 +58,7 @@ export const ELECTRONICS = [
     name: 'Plattenspieler',
     icon: '🎙️',
     findChance: 0.05,
-    dismantleTimeSec: 60,
+    dismantleTimeSec: 20,
     sellValue: 68,
     yields: [
       { id: 'aluminum', amount: 4 },
@@ -71,7 +71,7 @@ export const ELECTRONICS = [
     name: 'Synthesizer / Keyboard',
     icon: '🎹',
     findChance: 0.03,
-    dismantleTimeSec: 90,
+    dismantleTimeSec: 20,
     sellValue: 120,
     yields: [
       { id: 'chips', amount: 4 },
