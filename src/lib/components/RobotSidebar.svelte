@@ -55,7 +55,7 @@
         <div class="robot-body">
           <span class="robot-core" class:core-active={hasUpgrade('solar_battery_mk')}></span>
         </div>
-        <div class="robot-arm robot-arm-left"></div>
+        <div class="robot-arm robot-arm-left" class:has-diamond-blade={hasUpgrade('diamond_blade_mk')}></div>
         <div class="robot-arm robot-arm-right" class:has-cutter={hasUpgrade('laser_cutter_mk')}></div>
         <div class="robot-leg robot-leg-left"></div>
         <div class="robot-leg robot-leg-right"></div>
@@ -301,6 +301,18 @@
   .robot-arm { top: 77px; width: 16px; height: 60px; border-radius: 8px; background: #64748b; }
   .robot-arm-left { left: 2px; transform: rotate(8deg); }
   .robot-arm-right { right: 2px; transform: rotate(-8deg); }
+  .robot-arm-left.has-diamond-blade::after {
+    position: absolute;
+    top: 47px;
+    left: -8px;
+    width: 28px;
+    height: 28px;
+    content: '';
+    border: 4px dashed #e2e8f0;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #cbd5e1;
+    animation: blade-spin 2.4s linear infinite;
+  }
   .robot-arm-right.has-cutter { background: #f97316; border-color: #fdba74; box-shadow: 0 0 10px #f97316; }
   .robot-leg { top: 136px; width: 20px; height: 35px; border-radius: 5px; background: #64748b; }
   .robot-leg-left { left: 29px; }
@@ -320,5 +332,9 @@
   @keyframes radar-pulse {
     0%, 100% { opacity: 0.65; }
     50% { opacity: 1; }
+  }
+
+  @keyframes blade-spin {
+    to { transform: rotate(360deg); }
   }
 </style>

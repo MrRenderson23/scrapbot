@@ -55,7 +55,9 @@
   let materials = $state<Record<string, number>>({
     scrap: 0, copper: 0, aluminum: 0, transistors: 0,
     chips: 0, resistors: 0, diodes: 0, screws: 0,
-    springs: 0, leather: 0, plastic: 0, glass: 0
+    springs: 0, leather: 0, plastic: 0, glass: 0, gears: 0,
+    cables: 0, textiles: 0, motor: 0, batteries_material: 0,
+    carbon_fiber: 0, lamps: 0, gearboxes: 0
   });
 
   let credits = $state(0);
@@ -114,6 +116,26 @@
     return `rarity-${rarity}`;
   }
 
+  function materialRarityRank(materialId: string) {
+    const rarity = MATERIALS[materialId]?.rarity;
+    if (rarity === 'selten') return 1;
+    if (rarity === 'episch') return 2;
+    return 0;
+  }
+
+  function sortedYields(yields: { id: string; amount: number }[]) {
+    return [...yields].sort((first, second) => materialRarityRank(first.id) - materialRarityRank(second.id));
+  }
+
+  function itemRarity(item: { findChance: number }) {
+    if (item.findChance <= 0.05) return 2;
+    if (item.findChance <= 0.12) return 1;
+    return 0;
+  }
+
+  let sortedElectronics = $derived([...ELECTRONICS].sort((first, second) => itemRarity(first) - itemRarity(second)));
+  let sortedVehicles = $derived([...VEHICLES].sort((first, second) => itemRarity(first) - itemRarity(second)));
+
   // Inventare
   let deviceInventory = $state<Record<string, number>>(createInventory(ELECTRONICS, 'wecker'));
 
@@ -122,6 +144,13 @@
   // Upgrades
   let purchasedUpgrades = $state<string[]>([]);
   let purchasedBaseUpgrades = $state<string[]>([]);
+  let materialCapacity = $derived(
+    purchasedBaseUpgrades.includes('storage_capacity_mk3')
+      ? 10000
+      : purchasedBaseUpgrades.includes('storage_capacity_mk2')
+        ? 5000
+        : 1000
+  );
   let baseMaxEnergy = $derived(100 + purchasedBaseUpgrades.reduce((total, id) => {
     if (id === 'energy_storage_mk1') return total + 200;
     if (id === 'energy_storage_mk2') return total + 300;
@@ -183,11 +212,17 @@
   }
 
   function addResources(key: string, amount: number, source: 'player' | 'drone' | 'auto' = 'player') {
-    materials[key] = (materials[key] || 0) + amount;
-    const actualAmount = Math.max(0, amount);
+    const freeCapacity = Math.max(0, materialCapacity - totalMaterialCount());
+    const actualAmount = Math.min(Math.max(0, amount), freeCapacity);
+    materials[key] = (materials[key] || 0) + actualAmount;
     statistics.resourcesCollected += actualAmount;
     statistics[`${source}ResourcesCollected`] += actualAmount;
     resourcesCollectedByType[key] = (resourcesCollectedByType[key] || 0) + actualAmount;
+    return actualAmount;
+  }
+
+  function totalMaterialCount() {
+    return Object.values(materials).reduce((total, amount) => total + amount, 0);
   }
 
   function marketCost(baseCost: number) {
@@ -630,7 +665,7 @@
   }
 
   function canAffordBase(upgrade: typeof BASE_UPGRADES[0]) {
-    if (upgrade.id === 'charger_station' || upgrade.id === 'energy_storage' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
+    if (upgrade.id === 'charger_station' || upgrade.id === 'energy_storage' || upgrade.id === 'storage_capacity' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
       const nextLevel = upgrade.levels?.find(level => !purchasedBaseUpgrades.includes(level.id));
       return nextLevel?.costs.every(cost => (materials[cost.id] || 0) >= cost.amount) ?? false;
     }
@@ -640,7 +675,7 @@
   function buyBaseUpgrade(upgrade: typeof BASE_UPGRADES[0]) {
     if (!canAffordBase(upgrade)) return;
 
-    if (upgrade.id === 'charger_station' || upgrade.id === 'energy_storage' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
+    if (upgrade.id === 'charger_station' || upgrade.id === 'energy_storage' || upgrade.id === 'storage_capacity' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
       const nextLevel = upgrade.levels?.find(level => !purchasedBaseUpgrades.includes(level.id));
       if (!nextLevel) return;
       for (const cost of nextLevel.costs) materials[cost.id] -= cost.amount;
@@ -752,14 +787,15 @@
 
   function buyMaterial(key: string, amount: number = 1) {
     const count = Math.max(0, Math.floor(amount));
-    if (count <= 0) return;
+    const actualCount = Math.min(count, Math.max(0, materialCapacity - totalMaterialCount()));
+    if (actualCount <= 0) return;
 
-    const cost = marketCost(marketBuyPrice(MATERIAL_SELL_VALUES[key] || 0) * count);
+    const cost = marketCost(marketBuyPrice(MATERIAL_SELL_VALUES[key] || 0) * actualCount);
     if (credits < cost) return;
 
     credits -= cost;
     statistics.creditsSpent += cost;
-    materials[key] = (materials[key] || 0) + count;
+    materials[key] = (materials[key] || 0) + actualCount;
   }
 
   function buyDevice(item: typeof ELECTRONICS[0], amount: number = 1) {
@@ -826,6 +862,7 @@
   let activeDismantleId = $state<string | null>(null);
   let dismantleProgress = $state(0);
   let dismantleInterval: any = null;
+  let dismantleResult = $state<{ itemName: string; itemIcon: string; yields: { id: string; amount: number }[] } | null>(null);
 
   function startDismantling(item: any, isVehicle: boolean = false) {
     const inv = isVehicle ? vehicleInventory : deviceInventory;
@@ -869,9 +906,20 @@
           statistics.electronicsDismantled += 1;
           statistics.playerElectronicsDismantled += 1;
         }
+        const dismantledYields: { id: string; amount: number }[] = [];
         for (const [yieldIndex, yieldItem] of item.yields.entries()) {
-          addResources(yieldItem.id, dismantleYieldAmount(yieldItem.amount, yieldIndex));
+          const actualAmount = addResources(yieldItem.id, dismantleYieldAmount(yieldItem.amount, yieldIndex));
+          if (actualAmount > 0) {
+            const existingYield = dismantledYields.find(yieldEntry => yieldEntry.id === yieldItem.id);
+            if (existingYield) existingYield.amount += actualAmount;
+            else dismantledYields.push({ id: yieldItem.id, amount: actualAmount });
+          }
         }
+        dismantleResult = {
+          itemName: item.name,
+          itemIcon: item.icon,
+          yields: sortedYields(dismantledYields)
+        };
         awardExperience(XP_REWARDS.dismantle * (1 + talentBonus('salvage_mastery') * 0.15));
         dismantleProgress = 0;
         if (inv[item.id] <= 0) {
@@ -917,7 +965,7 @@
 
       <div class="base-upgrades-grid">
         {#each BASE_UPGRADES as baseUp}
-          {@const isMultiLevel = baseUp.id === 'charger_station' || baseUp.id === 'energy_storage' || baseUp.id === 'solar_station' || baseUp.id === 'scout_drone_station' || baseUp.id === 'repair_bench_station'}
+          {@const isMultiLevel = baseUp.id === 'charger_station' || baseUp.id === 'energy_storage' || baseUp.id === 'storage_capacity' || baseUp.id === 'solar_station' || baseUp.id === 'scout_drone_station' || baseUp.id === 'repair_bench_station'}
           {@const currentUpgradeLevel = isMultiLevel ? [...(baseUp.levels || [])].reverse().find(level => purchasedBaseUpgrades.includes(level.id)) : null}
           {@const nextUpgradeLevel = isMultiLevel ? baseUp.levels?.find(level => !purchasedBaseUpgrades.includes(level.id)) : null}
           {@const isBought = isMultiLevel ? !nextUpgradeLevel : purchasedBaseUpgrades.includes(baseUp.id)}
@@ -975,6 +1023,7 @@
   {#if activeTab === 'lager'}
     <div class="tab-content">
       <h2>📦 Lagerbestand (Rohstoffe)</h2>
+      <p class="tab-sub">Gesamtlager: {totalMaterialCount()} / {materialCapacity} Einheiten</p>
       <div class="materials-grid">
         {#each Object.entries(MATERIALS) as [key, mat]}
           <div class="material-card">
@@ -1251,9 +1300,25 @@
     <div class="tab-content">
       <h2>⚙️ Zerlege-Werkbank</h2>
 
+      {#if dismantleResult}
+        <div class="dismantle-result" role="status">
+          <strong>{dismantleResult.itemIcon} {dismantleResult.itemName} zerlegt</strong>
+          <span>Gefunden und eingelagert:</span>
+          <div class="dismantle-result-yields">
+            {#if dismantleResult.yields.length > 0}
+              {#each dismantleResult.yields as yieldItem}
+                <span>{MATERIALS[yieldItem.id]?.icon} {yieldItem.amount}x {MATERIALS[yieldItem.id]?.name}</span>
+              {/each}
+            {:else}
+              <span>Kein Platz im Rohstofflager</span>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
       <h3>📺 Gefundene Elektrogeräte</h3>
       <div class="items-grid">
-        {#each ELECTRONICS as item}
+        {#each sortedElectronics as item}
           {@const count = deviceInventory[item.id] || 0}
           <div class="item-card" class:disabled={count <= 0}>
             <div class="item-header">
@@ -1265,7 +1330,7 @@
             <div class="yield-info">
               <span class="yield-label">Ertrag:</span>
               <div class="yield-list">
-                {#each item.yields as yieldItem}
+                {#each sortedYields(item.yields) as yieldItem}
                   <span class="yield-item">
                     {MATERIALS[yieldItem.id]?.icon} {yieldItem.amount}x {MATERIALS[yieldItem.id]?.name}
                     <span class="yield-rarity {rarityClass(MATERIALS[yieldItem.id]?.rarity || 'gewöhnlich')}">{MATERIALS[yieldItem.id]?.rarity}</span>
@@ -1293,7 +1358,7 @@
 
       <h3 style="margin-top: 2rem;">🚗 Gefundene Fahrzeuge</h3>
       <div class="items-grid">
-        {#each VEHICLES as vehicle}
+        {#each sortedVehicles as vehicle}
           {@const count = vehicleInventory[vehicle.id] || 0}
           <div class="item-card" class:disabled={count <= 0}>
             <div class="item-header">
@@ -1305,7 +1370,7 @@
             <div class="yield-info">
               <span class="yield-label">Ertrag:</span>
               <div class="yield-list">
-                {#each vehicle.yields as yieldItem}
+                {#each sortedYields(vehicle.yields) as yieldItem}
                   <span class="yield-item">
                     {MATERIALS[yieldItem.id]?.icon} {yieldItem.amount}x {MATERIALS[yieldItem.id]?.name}
                     <span class="yield-rarity {rarityClass(MATERIALS[yieldItem.id]?.rarity || 'gewöhnlich')}">{MATERIALS[yieldItem.id]?.rarity}</span>
@@ -2163,6 +2228,39 @@
     margin-top: 0.75rem;
     font-size: 0.9rem;
     color: #4ade80;
+  }
+
+  .dismantle-result {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0 0 1.25rem;
+    padding: 0.85rem 1rem;
+    background: #102a43;
+    border: 1px solid #0ea5e9;
+    border-radius: 8px;
+    color: #dbeafe;
+  }
+
+  .dismantle-result strong {
+    color: #f8fafc;
+  }
+
+  .dismantle-result > span {
+    color: #93c5fd;
+    font-size: 0.8rem;
+  }
+
+  .dismantle-result-yields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .dismantle-result-yields span {
+    padding: 0.3rem 0.5rem;
+    background: #1e3a5f;
+    border-radius: 4px;
+    font-size: 0.78rem;
   }
 
   .items-grid {

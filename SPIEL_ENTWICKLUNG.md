@@ -261,15 +261,40 @@ aus seiner eigenen Energie; ein manueller Zerlegevorgang kostet 10 Energie.
 Die aktuelle Basisenergie und ihre Kapazität werden dauerhaft im oberen Header
 angezeigt, die persönliche Roboterenergie bleibt im Roboterprofil sichtbar.
 
+## Ressourcen
+
+Neben den Grundressourcen gibt es folgende zusätzliche Materialien:
+
+- **Zahnräder** und **Getriebe**: vor allem aus mechanischen Geräten und Fahrzeugen
+- **Kabel** und **Lampen**: aus Elektronikgeräten
+- **Textilien**: aus Innenausstattung von Fahrzeugen
+- **Motor**: aus größeren Fahrzeugen
+- **Akkus**: vor allem aus E-Bikes
+- **Kohlefaser**: aus hochwertigen Fahrzeugen und schweren Schrottfunden
+
+Alle Ressourcen werden gemeinsam in der Lagerkapazität gezählt und können im
+Markt gekauft oder verkauft werden. Die neuen Erträge sind in den Item-Dateien
+`src/lib/electronics.js` und `src/lib/vehicles.js` hinterlegt.
+
 Die Schnellladestation wird im Basis-Tab unterhalb der Basisgeräte bedient.
 Im rechten Roboterprofil werden stattdessen die gekauften Energie-Batterien
 angezeigt. Mit **Batterie einsetzen** lädt der Spieler die persönliche
 Roboterenergie auf; Basisenergie und Roboterenergie bleiben dabei getrennt.
 
+Nach jedem manuellen Zerlegevorgang zeigt die Werkbank ein Ergebnisfenster mit
+dem zerlegten Item und den tatsächlich ins Lager übernommenen Rohstoffen. Ist
+die gemeinsame Rohstoffkapazität voll, wird dies dort ausdrücklich angezeigt.
+
 Der **Energiespeicher** erweitert die maximale Basisenergie in drei Stufen:
 Mk.1 erhöht sie um 200, Mk.2 zusätzlich um 300 und Mk.3 zusätzlich um 500.
 Ausgehend von 100 Basisenergie sind damit maximal 300, 600 oder 1.100
 Basisenergie möglich.
+
+Die **Lagerkapazität** gilt gemeinsam für alle Rohstoffe. Ohne Ausbau bzw. mit
+Mk.1 stehen 1.000 Einheiten zur Verfügung, Mk.2 erhöht das Limit auf 5.000 und
+Mk.3 auf 10.000 Einheiten. Funde und Rohstoffkäufe werden automatisch auf den
+freien Platz begrenzt; Geräte, Fahrzeuge und Batterien zählen nicht zu diesem
+Rohstofflimit.
 
 Im Roboter-Profil wird bei mehrstufigen Upgrades nur die jeweils höchste
 installierte Stufe angezeigt. Frühere Stufen bleiben technisch gespeichert,
@@ -284,6 +309,9 @@ Die animierte Roboteranzeige aus dem Basis-Tab befindet sich oben in der
 rechten Seitenleiste. Dort werden auch der aktuelle Betriebsstatus und die
 kostenpflichtige Ladeaktion angezeigt; der frühere kleine Profilkopf wurde
 dadurch ersetzt.
+
+Die Roboteranzeige stellt den Plasmabrenner am rechten Arm und die
+Diamant-Trennscheibe als rotierende silberne Scheibe am linken Arm dar.
 
 Wenn ein Upgrade eine neue Spielwirkung erhält oder eine bestehende Wirkung geändert wird, sollte diese Übersicht zusammen mit dem Code aktualisiert werden.
 

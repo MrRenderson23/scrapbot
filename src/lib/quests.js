@@ -35,7 +35,7 @@ export const QUESTS = [
     description: 'Beschaffe genug Stahlfedern und Schrauben für größere Bauprojekte.',
     rewards: { glass: 10, leather: 5 },
     requirements: [
-      { type: 'material', id: 'screws', amount: 20, label: '20x Schrauben & Muttern besitzen' },
+      { type: 'material', id: 'screws', amount: 20, label: '20x Schrauben besitzen' },
       { type: 'material', id: 'springs', amount: 10, label: '10x Stahlfedern besitzen' }
     ]
   },
@@ -116,7 +116,7 @@ export const QUESTS = [
     requirements: [
       { type: 'material', id: 'scrap', amount: 100, label: '100x Altmetall im Inventar' },
       { type: 'material', id: 'aluminum', amount: 45, label: '45x Aluminium im Inventar' },
-      { type: 'material', id: 'screws', amount: 60, label: '60x Schrauben & Muttern im Inventar' }
+      { type: 'material', id: 'screws', amount: 60, label: '60x Schrauben im Inventar' }
     ]
   },
   {

@@ -10,7 +10,8 @@ export const ELECTRONICS = [
     yields: [
       { id: 'scrap', amount: 1 },
       { id: 'copper', amount: 2 },
-      { id: 'resistors', amount: 1 }
+      { id: 'resistors', amount: 1 },
+      { id: 'lamps', amount: 1 }
     ]
   },
   {
@@ -23,7 +24,8 @@ export const ELECTRONICS = [
     yields: [
       { id: 'scrap', amount: 1 },
       { id: 'diodes', amount: 2 },
-      { id: 'resistors', amount: 2 }
+      { id: 'resistors', amount: 2 },
+      { id: 'cables', amount: 1 }
     ]
   },
   {
@@ -36,7 +38,8 @@ export const ELECTRONICS = [
     yields: [
       { id: 'copper', amount: 4 },
       { id: 'aluminum', amount: 2 },
-      { id: 'transistors', amount: 2 }
+      { id: 'transistors', amount: 2 },
+      { id: 'cables', amount: 2 }
     ]
   },
   {
@@ -50,7 +53,9 @@ export const ELECTRONICS = [
       { id: 'copper', amount: 3 },
       { id: 'transistors', amount: 3 },
       { id: 'diodes', amount: 4 },
-      { id: 'chips', amount: 1 }
+      { id: 'chips', amount: 1 },
+      { id: 'cables', amount: 2 },
+      { id: 'lamps', amount: 1 }
     ]
   },
   {
@@ -63,7 +68,8 @@ export const ELECTRONICS = [
     yields: [
       { id: 'aluminum', amount: 4 },
       { id: 'copper', amount: 5 },
-      { id: 'transistors', amount: 4 }
+      { id: 'transistors', amount: 4 },
+      { id: 'gears', amount: 2 }
     ]
   },
   {
@@ -77,7 +83,9 @@ export const ELECTRONICS = [
       { id: 'chips', amount: 4 },
       { id: 'resistors', amount: 8 },
       { id: 'diodes', amount: 6 },
-      { id: 'copper', amount: 3 }
+      { id: 'copper', amount: 3 },
+      { id: 'cables', amount: 3 },
+      { id: 'lamps', amount: 2 }
     ]
   },
 ];

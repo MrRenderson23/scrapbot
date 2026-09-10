@@ -15,11 +15,19 @@ export const MATERIALS = {
   diodes: { name: 'Dioden', icon: '🔻', rarity: 'selten' },
 
   // Mechanische / Auto-Bauteile
-  screws: { name: 'Schrauben & Muttern', icon: '🔩', rarity: 'gewöhnlich' },
+  screws: { name: 'Schrauben', icon: '🔩', rarity: 'gewöhnlich' },
   springs: { name: 'Stahlfedern', icon: '🌀', rarity: 'selten' },
   leather: { name: 'Leder', icon: '🛋️', rarity: 'selten' },
   plastic: { name: 'Plastik', icon: '🧪', rarity: 'gewöhnlich' },
-  glass: { name: 'Glas', icon: '🪟', rarity: 'gewöhnlich' }
+  glass: { name: 'Glas', icon: '🪟', rarity: 'gewöhnlich' },
+  gears: { name: 'Zahnräder', icon: '⚙️', rarity: 'selten' },
+  cables: { name: 'Kabel', icon: '🔗', rarity: 'gewöhnlich' },
+  textiles: { name: 'Textilien', icon: '🧵', rarity: 'gewöhnlich' },
+  motor: { name: 'Motor', icon: '🔧', rarity: 'episch' },
+  batteries_material: { name: 'Akkus', icon: '🔋', rarity: 'selten' },
+  carbon_fiber: { name: 'Kohlefaser', icon: '⬛', rarity: 'episch' },
+  lamps: { name: 'Lampen', icon: '💡', rarity: 'gewöhnlich' },
+  gearboxes: { name: 'Getriebe', icon: '⚙️', rarity: 'episch' }
 };
 
 // ROBOTER UPGRADES
@@ -250,6 +258,44 @@ export const BASE_UPGRADES = [
           { id: 'copper', amount: 90 },
           { id: 'aluminum', amount: 70 },
           { id: 'chips', amount: 18 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'storage_capacity',
+    name: 'Lagerkapazität',
+    icon: '📦',
+    description: 'Erhöht die gemeinsame Kapazität aller Rohstoffe auf 1.000, 5.000 oder 10.000 Einheiten.',
+    levels: [
+      {
+        id: 'storage_capacity_mk1',
+        name: 'Lagerkapazität Mk.1',
+        materialCapacity: 1000,
+        costs: [
+          { id: 'scrap', amount: 40 },
+          { id: 'screws', amount: 25 },
+          { id: 'aluminum', amount: 15 }
+        ]
+      },
+      {
+        id: 'storage_capacity_mk2',
+        name: 'Lagerkapazität Mk.2',
+        materialCapacity: 5000,
+        costs: [
+          { id: 'scrap', amount: 100 },
+          { id: 'screws', amount: 60 },
+          { id: 'aluminum', amount: 40 }
+        ]
+      },
+      {
+        id: 'storage_capacity_mk3',
+        name: 'Lagerkapazität Mk.3',
+        materialCapacity: 10000,
+        costs: [
+          { id: 'scrap', amount: 250 },
+          { id: 'screws', amount: 140 },
+          { id: 'aluminum', amount: 90 }
         ]
       }
     ]

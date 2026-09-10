@@ -10,7 +10,15 @@ export const MATERIAL_SELL_VALUES: Record<string, number> = {
   springs: 5,
   leather: 9,
   plastic: 6,
-  glass: 5
+  glass: 5,
+  gears: 8,
+  cables: 5,
+  textiles: 7,
+  motor: 20,
+  batteries_material: 15,
+  carbon_fiber: 24,
+  lamps: 6,
+  gearboxes: 22
 };
 
 export function normalizeMarketAmount(value: number | undefined, fallback: number = 1, maxValue?: number) {

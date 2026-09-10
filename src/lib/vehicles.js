@@ -11,7 +11,9 @@ export const VEHICLES = [
       { id: 'scrap', amount: 4 },
       { id: 'screws', amount: 6 },
       { id: 'glass', amount: 2 },
-      { id: 'plastic', amount: 3 }
+      { id: 'plastic', amount: 3 },
+      { id: 'gears', amount: 2 },
+      { id: 'cables', amount: 2 }
     ]
   },
   {
@@ -26,7 +28,10 @@ export const VEHICLES = [
       { id: 'screws', amount: 10 },
       { id: 'springs', amount: 4 },
       { id: 'glass', amount: 4 },
-      { id: 'leather', amount: 2 }
+      { id: 'leather', amount: 2 },
+      { id: 'motor', amount: 1 },
+      { id: 'textiles', amount: 3 },
+      { id: 'gearboxes', amount: 1 }
     ]
   },
   {
@@ -40,7 +45,10 @@ export const VEHICLES = [
       { id: 'aluminum', amount: 8 },
       { id: 'leather', amount: 6 },
       { id: 'plastic', amount: 5 },
-      { id: 'screws', amount: 12 }
+      { id: 'screws', amount: 12 },
+      { id: 'motor', amount: 1 },
+      { id: 'carbon_fiber', amount: 2 },
+      { id: 'gearboxes', amount: 1 }
     ]
   },
   {
@@ -54,7 +62,11 @@ export const VEHICLES = [
       { id: 'scrap', amount: 15 },
       { id: 'springs', amount: 8 },
       { id: 'screws', amount: 20 },
-      { id: 'glass', amount: 6 }
+      { id: 'glass', amount: 6 },
+      { id: 'motor', amount: 2 },
+      { id: 'gears', amount: 5 },
+      { id: 'gearboxes', amount: 2 },
+      { id: 'carbon_fiber', amount: 1 }
     ]
   },
   {
@@ -68,7 +80,11 @@ export const VEHICLES = [
       { id: 'scrap', amount: 15 },
       { id: 'springs', amount: 8 },
       { id: 'screws', amount: 20 },
-      { id: 'glass', amount: 6 }
+      { id: 'glass', amount: 6 },
+      { id: 'motor', amount: 1 },
+      { id: 'cables', amount: 3 },
+      { id: 'batteries_material', amount: 2 },
+      { id: 'carbon_fiber', amount: 1 }
     ]
   }
 ];
