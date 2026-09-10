@@ -4,12 +4,16 @@
   let {
     robotAvatar,
     credits,
+    baseEnergy,
+    baseMaxEnergy,
     activeTab,
     isAdmin,
     onTabChange
   } = $props<{
     robotAvatar: string;
     credits: number;
+    baseEnergy: number;
+    baseMaxEnergy: number;
     activeTab: string;
     isAdmin: boolean;
     onTabChange: (tab: string) => void;
@@ -40,6 +44,9 @@
     <div class="stats-row">
       <div class="credits-box">
         <span>💰 Credits: {credits}</span>
+      </div>
+      <div class="energy-box">
+        <span>⚡ Basisenergie: {baseEnergy} / {baseMaxEnergy}</span>
       </div>
     </div>
   </div>
@@ -106,6 +113,16 @@
     padding: 0.5rem 1rem;
     border-radius: 8px;
     border: 1px solid #334155;
+  }
+
+  .energy-box {
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    color: #facc15;
   }
 
   .tabs-nav {

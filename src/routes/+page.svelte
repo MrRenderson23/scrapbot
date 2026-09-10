@@ -29,6 +29,7 @@
   let activeTab = $state('basis');
   let energy = $state(100);
   let maxEnergy = $state(100);
+  let baseEnergy = $state(100);
 
   // --- ADMIN / DEV-MODUS ZUSTAND ---
   let isAdmin = $state(false);
@@ -60,6 +61,8 @@
   let credits = $state(0);
   const BATTERY_PRICE = 50;
   const BATTERY_ENERGY = 50;
+  const AUTO_DISMANTLE_ENERGY_COST = 10;
+  const MANUAL_DISMANTLE_ENERGY_COST = 10;
   let batteries = $state(0);
   let experiencePoints = $state(0);
   let playerLevel = $derived(getLevelForXp(experiencePoints));
@@ -119,6 +122,12 @@
   // Upgrades
   let purchasedUpgrades = $state<string[]>([]);
   let purchasedBaseUpgrades = $state<string[]>([]);
+  let baseMaxEnergy = $derived(100 + purchasedBaseUpgrades.reduce((total, id) => {
+    if (id === 'energy_storage_mk1') return total + 200;
+    if (id === 'energy_storage_mk2') return total + 300;
+    if (id === 'energy_storage_mk3') return total + 500;
+    return total;
+  }, 0));
 
   // QUEST-ZUSTAND
   let completedQuestIds = $state<string[]>([]);
@@ -205,13 +214,19 @@
         activeTab = typeof savedGame.activeTab === 'string' ? savedGame.activeTab : activeTab;
         energy = restoreNumber(savedGame.energy, energy);
         maxEnergy = restoreNumber(savedGame.maxEnergy, maxEnergy);
+        baseEnergy = restoreNumber(savedGame.baseEnergy, baseEnergy);
         materials = restoreNumberMap(savedGame.materials, materials);
         credits = restoreNumber(savedGame.credits, credits);
         batteries = restoreNumber(savedGame.batteries, batteries);
         experiencePoints = restoreNumber(savedGame.experiencePoints, experiencePoints);
         deviceInventory = restoreNumberMap(savedGame.deviceInventory, deviceInventory);
         vehicleInventory = restoreNumberMap(savedGame.vehicleInventory, vehicleInventory);
-        purchasedUpgrades = restoreStringList(savedGame.purchasedUpgrades, purchasedUpgrades);
+        purchasedUpgrades = restoreStringList(savedGame.purchasedUpgrades, purchasedUpgrades).map(id => {
+          if (id === 'solar_battery') return 'solar_battery_mk1';
+          if (id === 'radar_eyes') return 'radar_eyes_mk1';
+          if (id === 'diamond_blade') return 'diamond_blade_mk1';
+          return id;
+        });
         purchasedBaseUpgrades = restoreStringList(savedGame.purchasedBaseUpgrades, purchasedBaseUpgrades);
         completedQuestIds = restoreStringList(savedGame.completedQuestIds, completedQuestIds);
         purchasedTalents = restoreStringList(savedGame.purchasedTalents, purchasedTalents);
@@ -232,6 +247,7 @@
       activeTab,
       energy,
       maxEnergy,
+      baseEnergy,
       materials,
       credits,
       batteries,
@@ -245,6 +261,10 @@
       statistics,
       resourcesCollectedByType
     }));
+  });
+
+  $effect(() => {
+    baseEnergy = Math.min(baseEnergy, baseMaxEnergy);
   });
 
   function isReqFulfilled(req: any) {
@@ -287,8 +307,8 @@
   // DYNAMISCHES ROBOTER-ICON
   let robotAvatar = $derived(() => {
     const hasLaser = purchasedUpgrades.some(id => id.startsWith('laser_cutter_mk'));
-    const hasRadar = purchasedUpgrades.includes('radar_eyes');
-    const hasBattery = purchasedUpgrades.includes('solar_battery');
+    const hasRadar = purchasedUpgrades.some(id => id.startsWith('radar_eyes_mk'));
+    const hasBattery = purchasedUpgrades.some(id => id.startsWith('solar_battery_mk'));
 
     if (hasLaser && hasRadar && hasBattery) return '🤖⚡🔥';
     if (hasLaser && hasRadar) return '🪓🤖👁️';
@@ -306,8 +326,15 @@
     return 10;
   });
 
+  let chargeCost = $derived(() => chargeAmount());
+
   function rechargeEnergy() {
-    energy = Math.min(maxEnergy, energy + chargeAmount());
+    const cost = chargeCost();
+    if (credits < cost || baseEnergy >= baseMaxEnergy) return;
+
+    credits -= cost;
+    statistics.creditsSpent += cost;
+    baseEnergy = Math.min(baseMaxEnergy, baseEnergy + chargeAmount());
   }
 
   // PASSIVES LADEN DURCH SOLARANLAGE
@@ -327,8 +354,8 @@
 
     if (solarAmount > 0) {
       const solarInterval = setInterval(() => {
-        if (energy < maxEnergy) {
-          energy = Math.min(maxEnergy, energy + solarAmount);
+        if (baseEnergy < baseMaxEnergy) {
+          baseEnergy = Math.min(baseMaxEnergy, baseEnergy + solarAmount);
         }
       }, solarIntervalMs);
       return () => clearInterval(solarInterval);
@@ -357,8 +384,10 @@
         ...VEHICLES.filter(item => vehicleInventory[item.id] > 0).map(item => ({ item, isVehicle: true }))
       ];
       if (availableItems.length === 0) return;
+      if (baseEnergy < AUTO_DISMANTLE_ENERGY_COST) return;
 
       const selected = availableItems[Math.floor(Math.random() * availableItems.length)];
+      baseEnergy -= AUTO_DISMANTLE_ENERGY_COST;
       const inventory = selected.isVehicle ? vehicleInventory : deviceInventory;
       inventory[selected.item.id] -= 1;
 
@@ -393,12 +422,12 @@
     if (droneIntervalMs === 0) return;
 
     const droneInterval = setInterval(() => {
-      if (energy < droneEnergyCost) {
+      if (baseEnergy < droneEnergyCost) {
         lastDroneMessage = '🛸 Drohne wartet auf Akkuladung...';
         return;
       }
 
-      energy -= droneEnergyCost;
+      baseEnergy -= droneEnergyCost;
 
       const rand = Math.random();
       let cumulative = 0;
@@ -447,6 +476,7 @@
 
   function cheatFullEnergy() {
     energy = maxEnergy;
+    baseEnergy = baseMaxEnergy;
   }
 
   function resetStorage() {
@@ -536,17 +566,18 @@
 
   $effect(() => {
     const energyBonus = talentBonus('efficient_core') * 10;
-    const upgradeBonus = purchasedUpgrades.includes('solar_battery') ? 50 : 0;
+    const batteryLevel = purchasedUpgrades.filter(id => id.startsWith('solar_battery_mk')).length;
+    const upgradeBonus = batteryLevel * 50;
     maxEnergy = 100 + upgradeBonus + energyBonus;
     energy = Math.min(energy, maxEnergy);
   });
 
   // KAUF-LOGIK (ROBOTER)
   type RobotUpgradeCost = { id: string; amount: number };
-  type RobotUpgradeLevel = { id: string; name: string; speedMultiplier: number; costs: RobotUpgradeCost[] };
+  type RobotUpgradeLevel = { id: string; name: string; costs: RobotUpgradeCost[] };
 
   function robotUpgradeLevels(upgrade: typeof ROBOT_UPGRADES[0]): RobotUpgradeLevel[] {
-    if (upgrade.id === 'laser_cutter' && 'levels' in upgrade) {
+    if ('levels' in upgrade) {
       return upgrade.levels as RobotUpgradeLevel[];
     }
     return [];
@@ -586,11 +617,6 @@
     for (const cost of robotUpgradeCosts(upgrade)) materials[cost.id] -= cost.amount;
     purchasedUpgrades.push(upgrade.id);
     awardExperience(XP_REWARDS.upgrade);
-
-    if (upgrade.id === 'solar_battery') {
-      maxEnergy = 150;
-      energy = 150;
-    }
   }
 
   // KAUF-LOGIK (BASIS)
@@ -604,7 +630,7 @@
   }
 
   function canAffordBase(upgrade: typeof BASE_UPGRADES[0]) {
-    if (upgrade.id === 'charger_station' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
+    if (upgrade.id === 'charger_station' || upgrade.id === 'energy_storage' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
       const nextLevel = upgrade.levels?.find(level => !purchasedBaseUpgrades.includes(level.id));
       return nextLevel?.costs.every(cost => (materials[cost.id] || 0) >= cost.amount) ?? false;
     }
@@ -614,7 +640,7 @@
   function buyBaseUpgrade(upgrade: typeof BASE_UPGRADES[0]) {
     if (!canAffordBase(upgrade)) return;
 
-    if (upgrade.id === 'charger_station' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
+    if (upgrade.id === 'charger_station' || upgrade.id === 'energy_storage' || upgrade.id === 'solar_station' || upgrade.id === 'scout_drone_station' || upgrade.id === 'repair_bench_station') {
       const nextLevel = upgrade.levels?.find(level => !purchasedBaseUpgrades.includes(level.id));
       if (!nextLevel) return;
       for (const cost of nextLevel.costs) materials[cost.id] -= cost.amount;
@@ -637,13 +663,13 @@
   function resolveSearchResult(type: 'electronics' | 'vehicles') {
     const isElectronics = type === 'electronics';
     const list = isElectronics ? ELECTRONICS : VEHICLES;
-    const hasRadar = purchasedUpgrades.includes('radar_eyes');
+    const radarLevel = purchasedUpgrades.filter(id => id.startsWith('radar_eyes_mk')).length;
     const rand = Math.random();
     const weightedItems = list.map(item => ({
       item,
       weight: item.findChance
         * (1 + talentBonus('scavenger_instinct') * 0.05)
-        + (hasRadar && item.findChance <= 0.05 ? 0.08 : 0)
+        + (radarLevel > 0 && item.findChance <= 0.05 ? radarLevel * 0.08 : 0)
         + (talentBonus('deep_scan') > 0 && item.findChance <= 0.12 ? 0.08 : 0)
     }));
     const totalWeight = weightedItems.reduce((total, entry) => total + entry.weight, 0);
@@ -803,8 +829,9 @@
 
   function startDismantling(item: any, isVehicle: boolean = false) {
     const inv = isVehicle ? vehicleInventory : deviceInventory;
-    if (inv[item.id] <= 0 || activeDismantleId) return;
+    if (inv[item.id] <= 0 || activeDismantleId || energy < MANUAL_DISMANTLE_ENERGY_COST) return;
 
+    energy -= MANUAL_DISMANTLE_ENERGY_COST;
     activeDismantleId = item.id;
     dismantleProgress = 0;
 
@@ -815,8 +842,18 @@
         : purchasedUpgrades.includes('laser_cutter_mk1')
           ? 0.85
           : 1.0;
+    const diamondBladeLevel = purchasedUpgrades.filter(id => id.startsWith('diamond_blade_mk')).length;
+    const diamondBladeBonus = isVehicle
+      ? diamondBladeLevel === 3
+        ? 0.55
+        : diamondBladeLevel === 2
+          ? 0.70
+          : diamondBladeLevel === 1
+            ? 0.85
+            : 1.0
+      : 1.0;
     const talentSpeedBonus = Math.max(0.5, 1 - talentBonus('quick_disassembly') * 0.08);
-    const durationMs = item.dismantleTimeSec * 1000 * speedBonus * talentSpeedBonus;
+    const durationMs = item.dismantleTimeSec * 1000 * speedBonus * diamondBladeBonus * talentSpeedBonus;
     const stepTime = 50;
     const increment = (stepTime / durationMs) * 100;
 
@@ -837,7 +874,13 @@
         }
         awardExperience(XP_REWARDS.dismantle * (1 + talentBonus('salvage_mastery') * 0.15));
         dismantleProgress = 0;
-        if (inv[item.id] <= 0) stopDismantling();
+        if (inv[item.id] <= 0) {
+          stopDismantling();
+        } else if (energy < MANUAL_DISMANTLE_ENERGY_COST) {
+          stopDismantling();
+        } else {
+          energy -= MANUAL_DISMANTLE_ENERGY_COST;
+        }
       }
     }, stepTime);
   }
@@ -856,6 +899,8 @@
   <GameHeader
     robotAvatar={robotAvatar()}
     {credits}
+    baseEnergy={baseEnergy}
+    baseMaxEnergy={baseMaxEnergy}
     {activeTab}
     {isAdmin}
     onTabChange={(tab) => activeTab = tab}
@@ -868,64 +913,11 @@
   {#if activeTab === 'basis'}
     <div class="tab-content">
       
-      <!-- WIEDER EINGEFÜGT: VISUELLES ROBOTER-PROFIL / VISUALISIERUNG -->
-      <div class="robot-display-card">
-        <div class="robot-visual-large">
-          <div class="robot-scene">
-            <div class="robot-platform"></div>
-            <div class="robot-figure" class:robot-low-energy={energy < maxEnergy * 0.2}>
-              <div class="robot-sensor-bar">
-                <span class:installed={purchasedUpgrades.includes('radar_eyes')}></span>
-                <span class:installed={purchasedUpgrades.includes('radar_eyes')}></span>
-              </div>
-              <div class="robot-head">
-                <span class="robot-eye" class:radar-active={purchasedUpgrades.includes('radar_eyes')}></span>
-                <span class="robot-eye" class:radar-active={purchasedUpgrades.includes('radar_eyes')}></span>
-              </div>
-              <div class="robot-body">
-                <span class="robot-core" class:core-active={purchasedUpgrades.includes('solar_battery')}></span>
-              </div>
-              <div class="robot-arm robot-arm-left"></div>
-              <div class="robot-arm robot-arm-right" class:has-cutter={purchasedUpgrades.some(id => id.startsWith('laser_cutter_mk'))}></div>
-              <div class="robot-leg robot-leg-left"></div>
-              <div class="robot-leg robot-leg-right"></div>
-            </div>
-          </div>
-          <div class="robot-avatar-caption">{robotAvatar()}</div>
-          <h3>ScrapBot Model-X</h3>
-          <p class="robot-status">
-            {#if activeDismantleId}Status: Zerlegevorgang läuft
-            {:else if activeSearchType}Status: Suche läuft
-            {:else if energy < maxEnergy * 0.2}Status: Energie niedrig
-            {:else}Status: Bereit & Einsatzfähig{/if}
-          </p>
-        </div>
-
-        <div class="robot-installed-upgrades">
-          <h4>🤖 Installierte Upgrades:</h4>
-          {#if purchasedUpgrades.length === 0}
-            <p class="no-upgrades">Noch keine Upgrades installiert.</p>
-          {:else}
-            <div class="equipped-tags">
-              {#each purchasedUpgrades as upId}
-                {@const upObj = ROBOT_UPGRADES.find(u => u.id === upId) || ROBOT_UPGRADES.find(u => robotUpgradeLevels(u).some(level => level.id === upId))}
-                {@const upLevel = upObj ? robotUpgradeLevels(upObj).find(level => level.id === upId) : null}
-                {#if upObj}
-                  <span class="equipped-tag">
-                    {upObj.icon} {upLevel?.name || upObj.name}
-                  </span>
-                {/if}
-              {/each}
-            </div>
-          {/if}
-        </div>
-      </div>
-
       <h2>🏰 Hauptbasis & Ausbau</h2>
 
       <div class="base-upgrades-grid">
         {#each BASE_UPGRADES as baseUp}
-          {@const isMultiLevel = baseUp.id === 'charger_station' || baseUp.id === 'solar_station' || baseUp.id === 'scout_drone_station' || baseUp.id === 'repair_bench_station'}
+          {@const isMultiLevel = baseUp.id === 'charger_station' || baseUp.id === 'energy_storage' || baseUp.id === 'solar_station' || baseUp.id === 'scout_drone_station' || baseUp.id === 'repair_bench_station'}
           {@const currentUpgradeLevel = isMultiLevel ? [...(baseUp.levels || [])].reverse().find(level => purchasedBaseUpgrades.includes(level.id)) : null}
           {@const nextUpgradeLevel = isMultiLevel ? baseUp.levels?.find(level => !purchasedBaseUpgrades.includes(level.id)) : null}
           {@const isBought = isMultiLevel ? !nextUpgradeLevel : purchasedBaseUpgrades.includes(baseUp.id)}
@@ -957,6 +949,20 @@
             </button>
           </div>
         {/each}
+      </div>
+
+      <div class="base-energy-panel">
+        <div>
+          <h3>⚡ Basisenergie</h3>
+          <p>{baseEnergy} / {baseMaxEnergy} Energie verfügbar</p>
+        </div>
+        <button
+          class="action-btn secondary"
+          disabled={baseEnergy >= baseMaxEnergy || credits < chargeCost()}
+          onclick={rechargeEnergy}
+        >
+          ⚡ Basis laden (+{chargeAmount()} Energie, {chargeCost()} C)
+        </button>
       </div>
 
       {#if lastDroneMessage}
@@ -1605,6 +1611,12 @@
       {nextLevelXp}
       {energy}
       {maxEnergy}
+      {purchasedUpgrades}
+      {batteries}
+      robotAvatar={robotAvatar()}
+      activeDismantle={activeDismantleId !== null}
+      activeSearch={activeSearchType !== null}
+      onUseBattery={useBattery}
     />
   </div>
 
@@ -1822,239 +1834,6 @@
     .talent-points-badge { width: 100%; box-sizing: border-box; }
   }
 
-  /* STYLES FÜR ROBOTER-PROFIL CARD */
-  .robot-display-card {
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 1.5rem;
-    display: flex;
-    gap: 2rem;
-    align-items: center;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .robot-visual-large {
-    text-align: center;
-    background: #1e293b;
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    border: 1px solid #334155;
-    min-width: min(280px, 100%);
-  }
-
-  .robot-scene {
-    position: relative;
-    width: min(250px, 100%);
-    height: 250px;
-    margin: 0 auto 0.25rem;
-    overflow: hidden;
-    background: #172554;
-    border: 1px solid #1d4ed8;
-    border-radius: 8px;
-  }
-
-  .robot-platform {
-    position: absolute;
-    left: 12%;
-    right: 12%;
-    bottom: 19px;
-    height: 10px;
-    background: #475569;
-    border: 2px solid #64748b;
-    border-radius: 50%;
-    box-shadow: 0 0 0 5px #1e3a8a;
-  }
-
-  .robot-figure {
-    position: absolute;
-    left: 50%;
-    bottom: 33px;
-    width: 116px;
-    height: 175px;
-    transform: translateX(-50%);
-    animation: robot-hover 3s ease-in-out infinite;
-  }
-
-  .robot-head,
-  .robot-body,
-  .robot-arm,
-  .robot-leg,
-  .robot-sensor-bar {
-    position: absolute;
-    background: #cbd5e1;
-    border: 2px solid #64748b;
-  }
-
-  .robot-head {
-    left: 27px;
-    top: 12px;
-    width: 62px;
-    height: 48px;
-    border-radius: 10px 10px 7px 7px;
-    background: #e2e8f0;
-  }
-
-  .robot-body {
-    left: 20px;
-    top: 70px;
-    width: 76px;
-    height: 70px;
-    border-radius: 12px 12px 16px 16px;
-    background: #94a3b8;
-  }
-
-  .robot-sensor-bar {
-    left: 37px;
-    top: 2px;
-    width: 42px;
-    height: 12px;
-    border-radius: 6px;
-    background: #475569;
-    z-index: 2;
-  }
-
-  .robot-sensor-bar span {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    margin: 1px 4px;
-    border-radius: 50%;
-    background: #64748b;
-  }
-
-  .robot-sensor-bar span.installed {
-    background: #facc15;
-    box-shadow: 0 0 8px #facc15;
-  }
-
-  .robot-eye {
-    position: absolute;
-    top: 17px;
-    width: 12px;
-    height: 7px;
-    border-radius: 4px;
-    background: #0f172a;
-  }
-
-  .robot-eye:first-child { left: 13px; }
-  .robot-eye:last-child { right: 13px; }
-
-  .robot-eye.radar-active {
-    background: #22d3ee;
-    box-shadow: 0 0 10px #22d3ee;
-    animation: radar-pulse 1.5s ease-in-out infinite;
-  }
-
-  .robot-core {
-    position: absolute;
-    left: 27px;
-    top: 20px;
-    width: 22px;
-    height: 22px;
-    border: 4px solid #475569;
-    border-radius: 50%;
-    background: #1e293b;
-  }
-
-  .robot-core.core-active {
-    background: #facc15;
-    border-color: #fef08a;
-    box-shadow: 0 0 14px #facc15;
-  }
-
-  .robot-arm {
-    top: 77px;
-    width: 16px;
-    height: 60px;
-    border-radius: 8px;
-    background: #64748b;
-  }
-
-  .robot-arm-left { left: 2px; transform: rotate(8deg); }
-  .robot-arm-right { right: 2px; transform: rotate(-8deg); }
-
-  .robot-arm-right.has-cutter {
-    background: #f97316;
-    border-color: #fdba74;
-    box-shadow: 0 0 10px #f97316;
-  }
-
-  .robot-leg {
-    top: 136px;
-    width: 20px;
-    height: 35px;
-    border-radius: 5px;
-    background: #64748b;
-  }
-
-  .robot-leg-left { left: 29px; }
-  .robot-leg-right { right: 29px; }
-
-  .robot-low-energy .robot-core {
-    background: #ef4444;
-    border-color: #fca5a5;
-    box-shadow: 0 0 12px #ef4444;
-  }
-
-  .robot-avatar-caption {
-    min-height: 1.5rem;
-    font-size: 1.25rem;
-  }
-
-  @keyframes robot-hover {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-4px); }
-  }
-
-  @keyframes radar-pulse {
-    0%, 100% { opacity: 0.65; }
-    50% { opacity: 1; }
-  }
-
-  .robot-visual-large h3 {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-
-  .robot-status {
-    margin: 0.2rem 0 0 0;
-    font-size: 0.8rem;
-    color: #4ade80;
-  }
-
-  .robot-installed-upgrades {
-    flex: 1;
-  }
-
-  .robot-installed-upgrades h4 {
-    margin: 0 0 0.75rem 0;
-    color: #cbd5e1;
-  }
-
-  .no-upgrades {
-    color: #64748b;
-    font-style: italic;
-    margin: 0;
-  }
-
-  .equipped-tags {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .equipped-tag {
-    background: #1e293b;
-    border: 1px solid #2563eb;
-    color: #f1f5f9;
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 500;
-  }
-
   .drone-status {
     background: #0f172a;
     border: 1px solid #334155;
@@ -2063,6 +1842,40 @@
     margin-bottom: 1.5rem;
     color: #38bdf8;
     font-weight: 500;
+  }
+
+  .base-energy-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+  }
+
+  .base-energy-panel h3,
+  .base-energy-panel p {
+    margin: 0;
+  }
+
+  .base-energy-panel h3 {
+    color: #facc15;
+  }
+
+  .base-energy-panel p {
+    margin-top: 0.25rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 560px) {
+    .base-energy-panel {
+      align-items: stretch;
+      flex-direction: column;
+    }
   }
 
   .materials-grid {

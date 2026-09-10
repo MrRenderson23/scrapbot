@@ -68,11 +68,35 @@ export const ROBOT_UPGRADES = [
     name: 'Infrarot-Radar',
     icon: '👁️',
     category: 'Sensoren',
-    description: 'Erhöht die Chance, seltene Funde beim Suchen zu entdecken.',
-    costs: [
-      { id: 'chips', amount: 3 },
-      { id: 'diodes', amount: 8 },
-      { id: 'glass', amount: 5 }
+    description: 'Erhöht die Chance auf seltene Funde pro Ausbaustufe um 8%.',
+    levels: [
+      {
+        id: 'radar_eyes_mk1',
+        name: 'Infrarot-Radar Mk.1',
+        costs: [
+          { id: 'chips', amount: 3 },
+          { id: 'diodes', amount: 8 },
+          { id: 'glass', amount: 5 }
+        ]
+      },
+      {
+        id: 'radar_eyes_mk2',
+        name: 'Infrarot-Radar Mk.2',
+        costs: [
+          { id: 'chips', amount: 6 },
+          { id: 'diodes', amount: 14 },
+          { id: 'glass', amount: 9 }
+        ]
+      },
+      {
+        id: 'radar_eyes_mk3',
+        name: 'Infrarot-Radar Mk.3',
+        costs: [
+          { id: 'chips', amount: 10 },
+          { id: 'diodes', amount: 22 },
+          { id: 'glass', amount: 14 }
+        ]
+      }
     ]
   },
   {
@@ -80,11 +104,38 @@ export const ROBOT_UPGRADES = [
     name: 'Diamant-Trennscheibe',
     icon: '⚙️',
     category: 'Arm-Werkzeug',
-    description: 'Ermöglicht das mühelose Zerlegen schwerer Materialien.',
-    costs: [
-      { id: 'aluminum', amount: 12 },
-      { id: 'springs', amount: 10 },
-      { id: 'screws', amount: 20 }
+    description: 'Verkürzt die Zerlegezeit von Fahrzeugen pro Ausbaustufe um weitere 15%.',
+    levels: [
+      {
+        id: 'diamond_blade_mk1',
+        name: 'Diamant-Trennscheibe Mk.1',
+        speedMultiplier: 0.85,
+        costs: [
+          { id: 'aluminum', amount: 12 },
+          { id: 'springs', amount: 10 },
+          { id: 'screws', amount: 20 }
+        ]
+      },
+      {
+        id: 'diamond_blade_mk2',
+        name: 'Diamant-Trennscheibe Mk.2',
+        speedMultiplier: 0.70,
+        costs: [
+          { id: 'aluminum', amount: 24 },
+          { id: 'springs', amount: 18 },
+          { id: 'screws', amount: 35 }
+        ]
+      },
+      {
+        id: 'diamond_blade_mk3',
+        name: 'Diamant-Trennscheibe Mk.3',
+        speedMultiplier: 0.55,
+        costs: [
+          { id: 'aluminum', amount: 42 },
+          { id: 'springs', amount: 30 },
+          { id: 'screws', amount: 55 }
+        ]
+      }
     ]
   },
   {
@@ -92,11 +143,35 @@ export const ROBOT_UPGRADES = [
     name: 'Kern-Kondensator',
     icon: '🔋',
     category: 'Energie',
-    description: 'Erhöht die maximale Energie des Scrapbots auf 150.',
-    costs: [
-      { id: 'copper', amount: 20 },
-      { id: 'plastic', amount: 10 },
-      { id: 'diodes', amount: 10 }
+    description: 'Erhöht die maximale Energie pro Ausbaustufe um 50.',
+    levels: [
+      {
+        id: 'solar_battery_mk1',
+        name: 'Kern-Kondensator Mk.1',
+        costs: [
+          { id: 'copper', amount: 20 },
+          { id: 'plastic', amount: 10 },
+          { id: 'diodes', amount: 10 }
+        ]
+      },
+      {
+        id: 'solar_battery_mk2',
+        name: 'Kern-Kondensator Mk.2',
+        costs: [
+          { id: 'copper', amount: 35 },
+          { id: 'plastic', amount: 20 },
+          { id: 'diodes', amount: 18 }
+        ]
+      },
+      {
+        id: 'solar_battery_mk3',
+        name: 'Kern-Kondensator Mk.3',
+        costs: [
+          { id: 'copper', amount: 55 },
+          { id: 'plastic', amount: 35 },
+          { id: 'diodes', amount: 28 }
+        ]
+      }
     ]
   }
 ];
@@ -107,7 +182,7 @@ export const BASE_UPGRADES = [
     id: 'charger_station',
     name: 'Schnellladestation',
     icon: '⚡',
-    description: 'Baue die Ladestation in drei Stufen aus: Mk.1 lädt 10⚡, Mk.2 lädt 25⚡ und Mk.3 lädt 50⚡ pro Ladevorgang.',
+    description: 'Baue die Ladestation in drei Stufen aus: Mk.1 lädt 10, Mk.2 lädt 25 und Mk.3 lädt 50 Energiepunkte pro Ladevorgang.',
     levels: [
       {
         id: 'charger_mk1',
@@ -137,6 +212,44 @@ export const BASE_UPGRADES = [
           { id: 'copper', amount: 60 },
           { id: 'screws', amount: 45 },
           { id: 'resistors', amount: 25 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'energy_storage',
+    name: 'Energiespeicher',
+    icon: '🔋',
+    description: 'Erhöht das Maximum der Basisenergie pro Ausbaustufe um 200, 300 und 500.',
+    levels: [
+      {
+        id: 'energy_storage_mk1',
+        name: 'Energiespeicher Mk.1',
+        baseEnergyBonus: 200,
+        costs: [
+          { id: 'copper', amount: 30 },
+          { id: 'aluminum', amount: 20 },
+          { id: 'chips', amount: 5 }
+        ]
+      },
+      {
+        id: 'energy_storage_mk2',
+        name: 'Energiespeicher Mk.2',
+        baseEnergyBonus: 300,
+        costs: [
+          { id: 'copper', amount: 55 },
+          { id: 'aluminum', amount: 40 },
+          { id: 'chips', amount: 10 }
+        ]
+      },
+      {
+        id: 'energy_storage_mk3',
+        name: 'Energiespeicher Mk.3',
+        baseEnergyBonus: 500,
+        costs: [
+          { id: 'copper', amount: 90 },
+          { id: 'aluminum', amount: 70 },
+          { id: 'chips', amount: 18 }
         ]
       }
     ]

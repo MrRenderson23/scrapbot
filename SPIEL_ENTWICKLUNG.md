@@ -239,6 +239,54 @@ Ein einfaches Roboter-Upgrade hat `costs`:
 
 Mehrstufige Upgrades wie der Plasmabrenner verwenden stattdessen `levels`. Jede Stufe braucht eine eigene ID und eigene Kosten. Die Stufen werden automatisch nacheinander angeboten.
 
+Aktuelle besondere Roboter-Upgrades:
+
+- **Plasmabrenner**: verkürzt die Zerlegezeit von Geräten und Fahrzeugen je nach Ausbaustufe.
+- **Infrarot-Radar**: hat drei Ausbaustufen und erhöht die Chance auf seltene Funde pro Stufe um 8 %.
+- **Diamant-Trennscheibe**: hat drei Ausbaustufen und verkürzt die Zerlegezeit von Fahrzeugen je nach Stufe um 15 %, 30 % oder 45 %. Der Bonus wird zusätzlich zu Plasmabrenner und Talentboni angewendet.
+- **Kern-Kondensator**: hat drei Ausbaustufen und erhöht die maximale Energie pro Stufe um 50 (150, 200 oder 250 Energie inklusive der Basis-Kapazität).
+
+Die Schnellladestation ist im Roboter-Profil direkt mit dem Button **Aufladen**
+verbunden. Jeder Ladevorgang stellt Energiepunkte wieder her: Mk.1 lädt 10,
+Mk.2 lädt 25 und Mk.3 lädt 50. Die Energie steigt dabei höchstens bis zur
+aktuellen maximalen Kapazität des ScrapBots. Der Ladevorgang kostet entsprechend
+10, 25 oder 50 Credits. Ohne ausreichendes Guthaben ist der Button deaktiviert;
+die ausgegebenen Credits werden in der Statistik erfasst.
+
+Die Basisenergie ist von der Roboterenergie getrennt. Die Schnellladestation
+und die Solaranlage verändern die Basisenergie; Sammeldrohne und
+Auto-Zerlegekran verbrauchen sie. Beide Basisgeräte pausieren, wenn die
+Basisreserve nicht ausreicht. Der Roboter bezahlt Suchen und manuelles Zerlegen
+aus seiner eigenen Energie; ein manueller Zerlegevorgang kostet 10 Energie.
+Die aktuelle Basisenergie und ihre Kapazität werden dauerhaft im oberen Header
+angezeigt, die persönliche Roboterenergie bleibt im Roboterprofil sichtbar.
+
+Die Schnellladestation wird im Basis-Tab unterhalb der Basisgeräte bedient.
+Im rechten Roboterprofil werden stattdessen die gekauften Energie-Batterien
+angezeigt. Mit **Batterie einsetzen** lädt der Spieler die persönliche
+Roboterenergie auf; Basisenergie und Roboterenergie bleiben dabei getrennt.
+
+Der **Energiespeicher** erweitert die maximale Basisenergie in drei Stufen:
+Mk.1 erhöht sie um 200, Mk.2 zusätzlich um 300 und Mk.3 zusätzlich um 500.
+Ausgehend von 100 Basisenergie sind damit maximal 300, 600 oder 1.100
+Basisenergie möglich.
+
+Im Roboter-Profil wird bei mehrstufigen Upgrades nur die jeweils höchste
+installierte Stufe angezeigt. Frühere Stufen bleiben technisch gespeichert,
+werden aber nicht zusätzlich als einzelne Upgrade-Tags aufgelistet.
+
+Die Roboter-Seitenleiste zeigt unter Erfahrungsstufe und Energie alle
+Upgrade-Reihen untereinander. Installierte Upgrades werden mit ihrer höchsten
+Stufe und dem Status **Installiert** angezeigt; noch nicht freigeschaltete
+Upgrades zeigen das erforderliche Spielerlevel.
+
+Die animierte Roboteranzeige aus dem Basis-Tab befindet sich oben in der
+rechten Seitenleiste. Dort werden auch der aktuelle Betriebsstatus und die
+kostenpflichtige Ladeaktion angezeigt; der frühere kleine Profilkopf wurde
+dadurch ersetzt.
+
+Wenn ein Upgrade eine neue Spielwirkung erhält oder eine bestehende Wirkung geändert wird, sollte diese Übersicht zusammen mit dem Code aktualisiert werden.
+
 ## XP und Level
 
 Die XP-Regeln liegen in `src/lib/game/progression.ts`. Dort kannst du die Belohnungen zentral anpassen:
